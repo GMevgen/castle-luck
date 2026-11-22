@@ -6,6 +6,8 @@
 
   D.TITLE = 'Замок удачи';
   D.SAVE_VERSION = 3;
+  D.APP_VERSION = '5.1';
+  D.CREDITS = { title: 'Замок удачи', author: 'GMevgen', year: 2026 };
 
   /* ---------- Слот ---------- */
   D.SYMBOLS = [

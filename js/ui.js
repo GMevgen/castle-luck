@@ -941,9 +941,22 @@
       '<button class="btn sec wide" data-act="paytable">📜 Выплаты и RTP</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="export">💾 Экспорт сохранения</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="import">📥 Импорт сохранения</button><div style="height:8px"></div>' +
+      '<button class="btn sec wide" data-act="credits">✒️ Создатели</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="reset" style="color:var(--bad)">Начать заново</button>' +
       (window.CLPlatform && CLPlatform.settingsHTML ? CLPlatform.settingsHTML() : '') +
-      '<p class="small muted">Замок удачи 5.0 · офлайн · сохранение v' + D.SAVE_VERSION + '<br>Без рейтингов, без покупок, без интернета.</p>', [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
+      '<p class="small muted">' + D.CREDITS.title + ' ' + D.APP_VERSION + ' · офлайн · сохранение v' + D.SAVE_VERSION + '<br>Без рейтингов, без покупок, без интернета.</p>', [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
+  }
+  function creditsDialog() { // экран «Создатели»: авторство игры
+    var c = D.CREDITS;
+    dialog('<div class="credits"><div class="cr-art"><img src="img/ui/castle_bg.webp" alt=""></div>' +
+      '<div class="cr-kicker">Создатели</div><h2 class="cr-title">' + c.title + '</h2>' +
+      '<div class="cr-ver">Версия ' + D.APP_VERSION + '</div>' +
+      '<div class="cr-card"><div class="cr-role">Автор игры</div><div class="cr-name">' + c.author + '</div>' +
+      '<div class="cr-sub">идея, сюжет, персонажи, рисунки и программирование</div></div>' +
+      '<p class="cr-note">Игра «' + c.title + '», её мир, персонажи и все рисунки принадлежат автору — ' + c.author + '. ' +
+      'Пожалуйста, не копируйте, не перепродавайте и не выкладывайте игру или её графику от своего имени без разрешения автора.</p>' +
+      '<div class="cr-copy">© ' + c.year + ' ' + c.author + '. Все права защищены.</div>' +
+      '<div class="cr-thanks">Спасибо, что играете! ✨</div></div>', [{ t: 'Назад к настройкам', act: 'backSettings', cls: 'sec' }]);
   }
   function profileDialog() {
     var d = E.derived(state), st = state.stats;
@@ -1027,6 +1040,8 @@
     claimLogin: function () { if ($('.dialog [data-act="claimLogin"]')) closeModal(); var r = E.claimLogin(state, rng, now()); if (r.ok) { showReward('Награда за вход: день ' + r.day, r.reward); refreshAll(); } },
     claimAch: function (d) { var r = E.claimAch(state, d.id, rng, now()); if (r.ok) { showReward('Достижение!', r.reward); refreshAll(); } },
     settings: function () { settingsDialog(); },
+    credits: function () { closeModal(); creditsDialog(); },
+    backSettings: function () { closeModal(); settingsDialog(); },
     profile: function () { profileDialog(); },
     toggleSound: function () { state.settings.sound = !state.settings.sound; S.setEnabled(state.settings.sound); save(); closeModal(); settingsDialog(); },
     export: function () {
