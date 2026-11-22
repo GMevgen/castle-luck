@@ -22,7 +22,7 @@
     var k = y * s.mw + x; return (m[k >> 3] >> (7 - (k & 7))) & 1;
   }
   function preload() {
-    var list = ['map', 'ruins', 'scaffold', 'orchard', 'garden', 'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'];
+    var list = ['map', 'ruins', 'scaffold', 'orchard', 'garden', 'dragon_head', 'smith0', 'smith1', 'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'];
     D.BUILDINGS.forEach(function (b) { for (var t = 1; t <= 3; t++) list.push(b.id + '_' + t); });
     list.forEach(img);
   }
@@ -41,10 +41,10 @@
     var W = 0, H = 0, dpr = 1, model = [], alive = true, raf = 0, last = 0, T = 0;
     var cam = { x: ISO.home[0], y: ISO.home[1], z: 1 }, inited = false, vel = { x: 0, y: 0 }, anim = null;
     var parts = [], press = {}, rects = [], emitT = {}, stats = { frames: 0, dts: [] };
-    var birds = [0, 1, 2, 3].map(function (i) { return newBird(i * 0.31); });
+    var fx = CL.IsoFx ? CL.IsoFx.create() : null, quality = 'high', autoLow = false, fpsWin = [], dirty = true, lastDraw = 0, onScreenT = 0;
+    var lampGlow = (function () { var c = document.createElement('canvas'); c.width = c.height = 44; var g = c.getContext('2d'), gr = g.createRadialGradient(22, 22, 0, 22, 22, 22); gr.addColorStop(0, 'rgba(255,210,120,.55)'); gr.addColorStop(1, 'rgba(255,170,60,0)'); g.fillStyle = gr; g.fillRect(0, 0, 44, 44); return c; })();
     var walkers = (ISO.walks || []).map(function (w, i) { return { w: w, u: w.ph || (i * 0.23) % 1, dir: 1 }; });
 
-    function newBird(ph) { var y = 120 + Math.random() * 500, l2r = Math.random() < 0.5; return { x: l2r ? -60 - ph * 900 : 1090 + ph * 900, y: y, vx: (l2r ? 1 : -1) * (26 + Math.random() * 14), vy: -3 + Math.random() * 6, f: Math.random() * 6, s: 0.8 + Math.random() * 0.5 }; }
     function minZ() { var b = ISO.bounds; return Math.max(W / (b[2] - b[0]), H / (b[3] - b[1])); }
     function maxZ() { return Math.max(2.4, minZ() * 1.6); }
     function clamp() {
@@ -55,11 +55,11 @@
     }
     function home() { cam.x = ISO.home[0]; cam.y = ISO.home[1]; cam.z = Math.max(minZ(), 0.95); clamp(); }
     function resize() {
-      var r = host.getBoundingClientRect(), nd = Math.min(2, root.devicePixelRatio || 1);
+      var r = host.getBoundingClientRect(), nd = Math.min(quality === 'high' ? 2 : 1.5, root.devicePixelRatio || 1); // экономный режим — меньше пикселей
       if (r.width < 2 || r.height < 2) return false;
       if (r.width !== W || r.height !== H || nd !== dpr) {
         W = r.width; H = r.height; dpr = nd;
-        cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px';
+        dirty = true; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px';
         if (!inited) { inited = true; home(); } else clamp();
       }
       return true;
@@ -95,15 +95,16 @@
       if (m.can && !m.job && !m.locked) { // золотая подсветка участка: можно улучшить
         diamond(p, 1.02 + 0.03 * Math.sin(T * 3)); ctx.fillStyle = 'rgba(255,214,90,' + (0.18 + 0.12 * Math.sin(T * 3)).toFixed(3) + ')'; ctx.fill();
       }
-      drawSpr(r, m.locked ? 0.82 : null);
+      var vis = r.x < V.x1 && r.x + r.w > V.x0 && r.y < V.y1 && r.y + r.h > V.y0;
+      if (vis) drawSpr(r, m.locked ? 0.82 : null);
       var hit = [r];
       if (m.job) {
         var sr = placeSprite('scaffold', p, m.lvl > 0 ? 0.9 : 0.86);
         if (sr) {
           if (m.lvl > 0) { sr.y -= r.h * 0.06; }
-          drawSpr(sr, 0.96); hit.push(sr);
+          if (vis) drawSpr(sr, 0.96); hit.push(sr);
         }
-        if (m.job.active) {
+        if (m.job.active && vis) {
           var hw = p.w / 2, hh = p.w * 0.31, key = 'b_' + m.id;
           if ((emitT[key] || 0) < T) { emitT[key] = T + 0.09; var u = Math.random(), side = Math.random() < 0.5 ? -1 : 1; puff(p.x + side * hw * (1 - u), p.y + hh * u * 0.95, 'dust'); }
           // строители: один стучит молотком, другой ходит с доской вдоль фасада
@@ -122,18 +123,21 @@
       ctx.save(); ctx.translate(x, y - (bob || 0)); if (rot) ctx.rotate(rot); if (face < 0) ctx.scale(-1, 1);
       ctx.drawImage(im, -w / 2, -h, w, h); ctx.restore();
     }
+    var V = { x0: 0, x1: 1024, y0: 0, y1: 1024 };
     var FACE = { v0: 1, v1: 1, v2: 1, v3: -1, v4: 1, v5: 1, v6: 1, v7: 1 };
     function draw(now) {
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#f7f3e8'; ctx.fillRect(0, 0, cv.width, cv.height);
       var z = cam.z * dpr;
       ctx.setTransform(z, 0, 0, z, dpr * (W / 2 - cam.x * cam.z), dpr * (H / 2 - cam.y * cam.z));
       ctx.imageSmoothingEnabled = true; try { ctx.imageSmoothingQuality = 'high'; } catch (e) { }
+      V = { x0: cam.x - W / 2 / cam.z, x1: cam.x + W / 2 / cam.z, y0: cam.y - H / 2 / cam.z, y1: cam.y + H / 2 / cam.z };
       var map = img('map'); if (ok(map)) ctx.drawImage(map, 0, 0, ISO.size, ISO.size);
       // вода: блики на пруду и реке
       var pd = ISO.pond; ctx.fillStyle = '#ffffff';
       for (var i = 0; i < 6; i++) { var a = T * 0.6 + i * 1.7; ctx.globalAlpha = 0.25 + 0.25 * Math.sin(T * 2 + i); ctx.fillRect(pd[0] + Math.cos(a) * pd[2] * 0.6 - 4, pd[1] + Math.sin(a * 1.3) * pd[3] * 0.5, 8, 1.4); }
       for (i = 0; i < 16; i++) { var pt = lerpPath(ISO.river, false, ((T * 0.018 + i / 16) % 1)); ctx.globalAlpha = 0.3 + 0.3 * Math.sin(T * 3 + i * 2); ctx.fillRect(pt[0] - 5 + (i % 3) * 6, pt[1] + ((i * 7) % 11) - 5, 10, 1.6); }
       ctx.globalAlpha = 1;
+      if (fx) fx.drawGround(ctx, V);
       // сортировка по глубине (y)
       rects = [];
       var list = [];
@@ -142,11 +146,13 @@
       walkers.forEach(function (w) {
         var p = lerpPath(w.w.path, w.w.loop, w.u); list.push({ y: p[1], wk: w, p: p });
       });
+      if (fx) fx.depthItems(V, model).forEach(function (it) { list.push({ y: it.y, fx: it }); });
       list.sort(function (a, b) { return a.y - b.y; });
       list.forEach(function (it) {
         if (it.b) drawBuilding(it.b, now);
+        else if (it.fx) fx.drawDepth(ctx, it.fx);
         else if (it.d) { var r = placeSprite(it.d.spr, it.d, 1.05); if (r) drawSpr(r); }
-        else { var w = it.wk, dx = it.p[2] * w.dir; drawWalker(w.w.spr, it.p[0], it.p[1], (dx < 0 ? -1 : 1) * FACE[w.w.spr], 24, Math.sin(T * 8 + w.u * 50) * 0.04, Math.abs(Math.sin(T * 8 + w.u * 50)) * 1.2); }
+        else if (it.p[0] > V.x0 - 30 && it.p[0] < V.x1 + 30 && it.p[1] > V.y0 - 10 && it.p[1] < V.y1 + 40) { var w = it.wk, dx = it.p[2] * w.dir; drawWalker(w.w.spr, it.p[0], it.p[1], (dx < 0 ? -1 : 1) * FACE[w.w.spr], 24, Math.sin(T * 8 + w.u * 50) * 0.04, Math.abs(Math.sin(T * 8 + w.u * 50)) * 1.2); }
       });
       // дым из труб
       model.forEach(function (m) {
@@ -165,17 +171,10 @@
       ctx.globalCompositeOperation = 'lighter';
       ISO.lamps.forEach(function (l, j) {
         var f = 0.55 + 0.25 * Math.sin(T * 2.3 + j * 1.9) + 0.08 * Math.sin(T * 11 + j);
-        var g = ctx.createRadialGradient(l[0], l[1], 0, l[0], l[1], 22);
-        g.addColorStop(0, 'rgba(255,210,120,' + (0.55 * f).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,170,60,0)');
-        ctx.fillStyle = g; ctx.fillRect(l[0] - 22, l[1] - 22, 44, 44);
+        ctx.globalAlpha = Math.min(1, f); ctx.drawImage(lampGlow, l[0] - 22, l[1] - 22, 44, 44);
       });
-      ctx.globalCompositeOperation = 'source-over';
-      // птицы
-      ctx.strokeStyle = 'rgba(60,48,40,.75)'; ctx.lineWidth = 1.4; ctx.lineCap = 'round';
-      birds.forEach(function (b) {
-        var f = Math.sin(b.f) * 4 * b.s, s = 6 * b.s;
-        ctx.beginPath(); ctx.moveTo(b.x - s, b.y - f); ctx.quadraticCurveTo(b.x - s / 2, b.y - 2 - f / 2, b.x, b.y); ctx.quadraticCurveTo(b.x + s / 2, b.y - 2 - f / 2, b.x + s, b.y - f); ctx.stroke();
-      });
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      if (fx) fx.drawAir(ctx, V, cam);
       drawLabels(now);
     }
     function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
@@ -213,21 +212,25 @@
     }
 
     /* ---------- обновление ---------- */
+    function effQuality() { var q = (api.quality && api.quality()) || 'high'; return q === 'high' && autoLow ? 'low' : q; }
     function update(dt) {
+      var eq = effQuality(); if (fx && fx.quality() !== eq) fx.setQuality(eq); quality = eq;
+      if (eq !== 'off') {
       T += dt;
       parts = parts.filter(function (p) { p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.g) p.vy += p.g * dt; return p.life < p.max; });
-      birds.forEach(function (b, i) { b.x += b.vx * dt; b.y += b.vy * dt; b.f += dt * 9; if (b.x < -120 || b.x > 1150) birds[i] = newBird(0); });
       walkers.forEach(function (w) {
         var len = lerpPath(w.w.path, w.w.loop, 0)[3] || 1, sp = 11 * (w.w.speed || 1) / len;
         w.u += sp * dt * w.dir;
         if (w.w.loop) w.u = (w.u + 1) % 1; else if (w.u > 1) { w.u = 1; w.dir = -1; } else if (w.u < 0) { w.u = 0; w.dir = 1; }
       });
+      if (fx) fx.update(dt, { model: model });
+      }
       if (anim) {
         var k = Math.min(1, (T - anim.t0) / anim.d), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
         cam.x = anim.a.x + (anim.b.x - anim.a.x) * e; cam.y = anim.a.y + (anim.b.y - anim.a.y) * e; cam.z = anim.a.z + (anim.b.z - anim.a.z) * e;
-        clamp(); if (k >= 1) anim = null;
+        clamp(); dirty = true; if (k >= 1) anim = null;
       } else if (!drag && (Math.abs(vel.x) > 0.5 || Math.abs(vel.y) > 0.5)) { // инерция после броска
-        cam.x -= vel.x * dt / cam.z; cam.y -= vel.y * dt / cam.z; vel.x *= Math.pow(0.04, dt); vel.y *= Math.pow(0.04, dt); clamp();
+        cam.x -= vel.x * dt / cam.z; cam.y -= vel.y * dt / cam.z; vel.x *= Math.pow(0.04, dt); vel.y *= Math.pow(0.04, dt); clamp(); dirty = true;
       }
     }
     function frame(ts) {
@@ -235,7 +238,16 @@
       if (!cv.isConnected) { destroy(); return; }
       var dt = last ? Math.min(0.05, (ts - last) / 1000) : 0.016; last = ts;
       if (stats.dts.length >= 240) stats.dts.shift(); stats.dts.push(dt); stats.frames++;
-      if (resize() && !(api.paused && api.paused())) { update(dt); draw(api.now()); }
+      if (resize() && !(api.paused && api.paused())) {
+        update(dt);
+        if (quality !== 'off' || dirty || ts - lastDraw > 1000) { draw(api.now()); dirty = false; lastDraw = ts; }
+        // авто-экономия: если в «высоком» качестве 4 с подряд меньше 45 fps — переходим на «экономное»
+        onScreenT += dt;
+        if (quality === 'high' && onScreenT > 2.5 && !autoLow) { // окно 4 с по времени
+          fpsWin.push(dt); var sum = 0; fpsWin.forEach(function (d) { sum += d; }); while (sum > 4.2 && fpsWin.length > 1) sum -= fpsWin.shift();
+          if (sum >= 4 && fpsWin.length / sum < 45) { autoLow = true; if (api.onAutoLow) api.onAutoLow(); }
+        }
+      }
       raf = requestAnimationFrame(frame);
     }
 
@@ -274,12 +286,12 @@
       if (pinch && Object.keys(ptrs).length >= 2) {
         var ids = Object.keys(ptrs), a = ptrs[ids[0]], b = ptrs[ids[1]], mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
         cam.z = pinch.z * Math.hypot(a[0] - b[0], a[1] - b[1]) / pinch.d; clamp();
-        cam.x = pinch.w[0] - (mid[0] - W / 2) / cam.z; cam.y = pinch.w[1] - (mid[1] - H / 2) / cam.z; clamp();
+        cam.x = pinch.w[0] - (mid[0] - W / 2) / cam.z; cam.y = pinch.w[1] - (mid[1] - H / 2) / cam.z; clamp(); dirty = true;
       } else if (drag && drag.id === e.pointerId) {
         var p = ptrs[e.pointerId], dx = p[0] - drag.sx, dy = p[1] - drag.sy;
         if (!drag.moved && Math.hypot(dx, dy) > 7) drag.moved = true;
         if (drag.moved) {
-          cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; clamp();
+          cam.x = drag.cx - dx / cam.z; cam.y = drag.cy - dy / cam.z; clamp(); dirty = true;
           var t = performance.now(), dtt = Math.max(1, t - drag.lt);
           vel.x = 0.6 * vel.x + 0.4 * (p[0] - drag.lx) / dtt * 1000; vel.y = 0.6 * vel.y + 0.4 * (p[1] - drag.ly) / dtt * 1000;
           drag.lx = p[0]; drag.ly = p[1]; drag.lt = t;
@@ -308,7 +320,7 @@
       e.preventDefault(); anim = null;
       var p = pos(e), w = toWorld(p[0], p[1]), dy = e.deltaMode === 1 ? e.deltaY * 30 : e.deltaY;
       cam.z *= Math.exp(-dy * 0.0016); clamp();
-      cam.x = w[0] - (p[0] - W / 2) / cam.z; cam.y = w[1] - (p[1] - H / 2) / cam.z; clamp();
+      cam.x = w[0] - (p[0] - W / 2) / cam.z; cam.y = w[1] - (p[1] - H / 2) / cam.z; clamp(); dirty = true;
     }
     function noGesture(e) { e.preventDefault(); }
     cv.addEventListener('pointerdown', onDown);
@@ -324,14 +336,17 @@
     function destroy() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; if (cv.parentNode) cv.parentNode.removeChild(cv); }
     raf = requestAnimationFrame(frame);
     var self = {
-      setModel: function (m) { model = m || []; },
+      setModel: function (m) { model = m || []; dirty = true; },
+      fx: function () { return fx; },
+      quality: function () { return quality; },
+      autoLow: function () { return autoLow; },
       alive: function () { return alive && cv.isConnected; },
       destroy: destroy,
       view: function () { return { x: cam.x, y: cam.y, z: cam.z, minZ: minZ(), maxZ: maxZ(), W: W, H: H }; },
       setView: function (v, ms) {
         var b = { x: v.x != null ? v.x : cam.x, y: v.y != null ? v.y : cam.y, z: v.z != null ? v.z : cam.z };
         if (ms) { anim = { a: { x: cam.x, y: cam.y, z: cam.z }, b: b, t0: T, d: ms / 1000 }; }
-        else { cam.x = b.x; cam.y = b.y; cam.z = b.z; clamp(); }
+        else { cam.x = b.x; cam.y = b.y; cam.z = b.z; clamp(); } dirty = true;
       },
       zoomBy: function (f) { var c = { x: cam.x, y: cam.y, z: cam.z }; cam.z *= f; clamp(); var z2 = cam.z; cam.z = c.z; self.setView({ z: z2 }, 220); },
       home: function () { var c = { x: cam.x, y: cam.y, z: cam.z }; home(); var h = { x: cam.x, y: cam.y, z: cam.z }; cam.x = c.x; cam.y = c.y; cam.z = c.z; self.setView(h, 400); },

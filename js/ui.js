@@ -510,7 +510,9 @@
   }
   function mountCastle() {
     var host = $('#isoHost'); if (!host || !CL.Iso) return;
-    iso = CL.Iso.create(host, { now: now, fmtTime: fmtTime, onTap: tapBuilding, paused: function () { return sceneOpen; } });
+    iso = CL.Iso.create(host, { now: now, fmtTime: fmtTime, onTap: tapBuilding, paused: function () { return sceneOpen; },
+      quality: function () { return state.settings.mapFx || 'high'; },
+      onAutoLow: function () { toast('Анимация карты: включён экономный режим (устройство не успевает)'); } });
     iso.setModel(castleModel());
     var hint = $('#isoHint'); if (hint) setTimeout(function () { hint.classList.add('off'); }, 4200);
   }
@@ -934,13 +936,14 @@
     dialog('<h2>Настройки</h2>' +
       '<button class="btn sec wide" data-act="toggleSound">' + (s.sound ? '🔊 Звук: вкл' : '🔇 Звук: выкл') + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="turbo">' + (s.turbo ? '⚡ Турбо-вращение: вкл' : '⚡ Турбо-вращение: выкл') + '</button><div style="height:8px"></div>' +
+      '<button class="btn sec wide" data-act="mapFx">🏮 Анимация карты: ' + ({ high: 'полная', low: 'экономная', off: 'выкл' })[s.mapFx || 'high'] + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="toggleResidents">' + (s.residents === false ? '💬 Сценки жителей: выкл' : '💬 Сценки жителей: вкл') + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="paytable">📜 Выплаты и RTP</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="export">💾 Экспорт сохранения</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="import">📥 Импорт сохранения</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="reset" style="color:var(--bad)">Начать заново</button>' +
       (window.CLPlatform && CLPlatform.settingsHTML ? CLPlatform.settingsHTML() : '') +
-      '<p class="small muted">Замок удачи 3.0 · офлайн · сохранение v' + D.SAVE_VERSION + '<br>Без рейтингов, без покупок, без интернета.</p>', [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
+      '<p class="small muted">Замок удачи 4.0 · офлайн · сохранение v' + D.SAVE_VERSION + '<br>Без рейтингов, без покупок, без интернета.</p>', [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
   }
   function profileDialog() {
     var d = E.derived(state), st = state.stats;
@@ -983,6 +986,7 @@
     bldList: function () { openSheet('Постройки замка', function () { return castleListHTML(); }); },
     isoZoom: function (d) { if (iso) iso.zoomBy(+d.f); },
     isoHome: function () { if (iso) iso.home(); },
+    mapFx: function () { var o = ['high', 'low', 'off'], c = state.settings.mapFx || 'high'; state.settings.mapFx = o[(o.indexOf(c) + 1) % 3]; save(); closeModal(); settingsDialog(); },
     toggleResidents: function () { state.settings.residents = state.settings.residents === false; save(); closeModal(); settingsDialog(); },
     upgrade: function (d) {
       var r = E.upgrade(state, d.id, now()); if (!r.ok) return fail(r);
