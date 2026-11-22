@@ -367,3 +367,6 @@ textarea,input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 .credits .cr-note{font-size:13.5px;line-height:1.45;margin:0 4px 10px;color:var(--ink)}
 .credits .cr-copy{font-weight:800;font-size:13px;color:var(--gold)}
 .credits .cr-thanks{font:400 18px/1.3 var(--hand);color:var(--dim);margin-top:8px}
+.credits .cr-list{margin:6px 0 0;padding:0 4px 0 22px;text-align:left;font-size:13px;line-height:1.4;color:var(--ink)}
+.credits .cr-list li{margin:2px 0}
+.credits .cr-list li::marker{color:var(--gold2)}

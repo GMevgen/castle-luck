@@ -946,16 +946,17 @@
       (window.CLPlatform && CLPlatform.settingsHTML ? CLPlatform.settingsHTML() : '') +
       '<p class="small muted">' + D.CREDITS.title + ' ' + D.APP_VERSION + ' · офлайн · сохранение v' + D.SAVE_VERSION + '<br>Без рейтингов, без покупок, без интернета.</p>', [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
   }
-  function creditsDialog() { // экран «Создатели»: авторство игры
+  function creditsDialog() { // экран «Создатели»: кто что делал
     var c = D.CREDITS;
+    function card(role, name, items) { return '<div class="cr-card"><div class="cr-role">' + role + '</div><div class="cr-name">' + name + '</div><ul class="cr-list">' + items.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></div>'; }
     dialog('<div class="credits"><div class="cr-art"><img src="img/ui/castle_bg.webp" alt=""></div>' +
       '<div class="cr-kicker">Создатели</div><h2 class="cr-title">' + c.title + '</h2>' +
-      '<div class="cr-ver">Версия ' + D.APP_VERSION + '</div>' +
-      '<div class="cr-card"><div class="cr-role">Автор игры</div><div class="cr-name">' + c.author + '</div>' +
-      '<div class="cr-sub">идея, сюжет, персонажи, рисунки и программирование</div></div>' +
-      '<p class="cr-note">Игра «' + c.title + '», её мир, персонажи и все рисунки принадлежат автору — ' + c.author + '. ' +
+      '<div class="cr-ver">Версия ' + D.APP_VERSION + ' · ' + c.author + ' и ' + c.maker + '</div>' +
+      card('Автор идеи', c.author, ['идея и замысел игры', 'мир замка, сюжет и жители — куда ведёт история', 'что добавить, что убрать и что переделать', 'выбор стиля, проверка и все решения по игре']) +
+      card('Код и рисунки', c.maker, ['весь программный код игры', 'все рисунки: карта, постройки, жители, портреты, карты коллекций', 'анимации, звуки и эффекты', 'сборка для Android и iPhone']) +
+      '<p class="cr-note">Игра «' + c.title + '» придумана ' + c.author + ' — это его игра. Код и рисунки выполнил ' + c.maker + ' по его задумке. ' +
       'Пожалуйста, не копируйте, не перепродавайте и не выкладывайте игру или её графику от своего имени без разрешения автора.</p>' +
-      '<div class="cr-copy">© ' + c.year + ' ' + c.author + '. Все права защищены.</div>' +
+      '<div class="cr-copy">© ' + c.year + ' ' + c.author + ' · код и рисунки: ' + c.maker + '</div>' +
       '<div class="cr-thanks">Спасибо, что играете! ✨</div></div>', [{ t: 'Назад к настройкам', act: 'backSettings', cls: 'sec' }]);
   }
   function profileDialog() {
