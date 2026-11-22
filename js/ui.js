@@ -188,12 +188,15 @@
   }
   function go(to) {
     if (spinning && to !== 'slot') { auto = false; }
+    if (to !== 'castle' && iso) { iso.destroy(); iso = null; }
     screen = to; buildNav(); renderScreen(); updateTop(); $('#screen').scrollTop = 0;
   }
   function renderScreen() {
     var el = $('#screen');
+    el.classList.toggle('iso-mode', screen === 'castle');
+    if (screen !== 'castle' && iso) { iso.destroy(); iso = null; }
     if (screen === 'slot') { el.innerHTML = renderSlot(); mountSlot(); }
-    else if (screen === 'castle') el.innerHTML = renderCastle();
+    else if (screen === 'castle') { if (iso && iso.alive() && $('#isoHud')) updateCastle(); else { el.innerHTML = renderCastle(); mountCastle(); } }
     else if (screen === 'cards') el.innerHTML = renderCards();
     else if (screen === 'quests') el.innerHTML = renderQuests();
     else if (screen === 'events') el.innerHTML = renderEvents();
@@ -477,15 +480,55 @@
       (c.end && !ready ? '<p>Откроется через ' + timerSpan(c.end) + '</p>' : ''), btns);
   }
 
-  /* ---------- замок ---------- */
+  /* ---------- замок (v3: изометрическая карта) ---------- */
+  var iso = null, resK = {};
+  function chapterBtnHTML() {
+    var ch = E.chapter(state);
+    if (state.story.finished) return '<button class="chapbtn" data-act="storyTab"><img src="img/story/10.webp"><div class="grow"><b>Сказание завершено</b><div class="small muted">Перечитать главы — во вкладке «Задания»</div></div></button>';
+    var done = ch.obj.filter(function (o) { return E.objProgress(state, o) >= o.t; }).length;
+    return '<button class="chapbtn" data-act="storyTab"><img src="' + ch.img + '"><div class="grow"><b>Глава ' + ch.n + ': ' + ch.title + '</b><div class="small ' + (E.chapterDone(state) ? 'ok' : 'muted') + '">' + (E.chapterDone(state) ? '✓ Все цели выполнены — продолжить историю' : 'Цели: ' + done + ' из ' + ch.obj.length) + '</div></div><span style="font-size:22px">›</span></button>';
+  }
+  function castleHudHTML() {
+    var d = E.derived(state, now()), q = state.builds, active = q.filter(function (j) { return j.start != null; }).length;
+    var can = D.BUILDINGS.filter(function (b) { return E.canUpgrade(state, b.id).ok && !state.builds.some(function (j) { return j.id === b.id; }); }).length;
+    return '<div class="iso-top">' + chapterBtnHTML() + '</div>' +
+      '<div class="iso-bottom"><button class="isob q" data-act="bqueue">🔨 Стройка <b>' + active + '/' + d.builders + '</b>' + (q.length > active ? ' <span class="muted">+' + (q.length - active) + '</span>' : '') + '</button>' +
+      '<button class="isob" data-act="bldList">☰ Постройки' + (can ? ' <span class="badge2">' + can + '</span>' : '') + '</button></div>' +
+      '<div class="iso-zoom"><button class="isob r" data-act="isoZoom" data-f="1.3" aria-label="Приблизить">＋</button><button class="isob r" data-act="isoZoom" data-f="0.77" aria-label="Отдалить">－</button><button class="isob r" data-act="isoHome" aria-label="К цитадели">⌂</button></div>';
+  }
   function renderCastle() {
-    var ch = E.chapter(state), h = '<div class="castle-hero" style="background-image:url(img/ui/castle_bg.webp)"><h2 style="margin:0 0 8px;font-size:26px">Замок Вальдмор</h2>';
-    if (state.story.finished) h += '<button class="chapbtn" data-act="storyTab"><img src="img/story/10.webp"><div class="grow"><b>Сказание завершено</b><div class="small muted">Перечитать главы — во вкладке «Задания»</div></div></button>';
-    else {
-      var done = ch.obj.filter(function (o) { return E.objProgress(state, o) >= o.t; }).length;
-      h += '<button class="chapbtn" data-act="storyTab"><img src="' + ch.img + '"><div class="grow"><b>Глава ' + ch.n + ': ' + ch.title + '</b><div class="small ' + (E.chapterDone(state) ? 'ok' : 'muted') + '">' + (E.chapterDone(state) ? '✓ Все цели выполнены — продолжить историю' : 'Цели: ' + done + ' из ' + ch.obj.length) + '</div></div><span style="font-size:22px">›</span></button>';
-    }
-    h += '</div>' + buildQueueHTML() + '<div class="bgrid">';
+    return '<div class="iso-wrap" id="isoWrap"><div class="iso-host" id="isoHost"></div><div class="iso-hud" id="isoHud">' + castleHudHTML() + '</div>' +
+      '<div class="iso-hint" id="isoHint">Тяните карту пальцем, щипок — масштаб. Нажмите на постройку.</div></div>';
+  }
+  function castleModel() {
+    var t = now();
+    return D.BUILDINGS.map(function (b) {
+      var job = null;
+      state.builds.forEach(function (j) { if (j.id !== b.id) return; if (j.start != null) job = { active: true, start: j.start, end: j.end, to: j.to }; else if (!job) job = { active: false, to: j.to }; });
+      return { id: b.id, name: b.name, lvl: state.bld[b.id], locked: state.level < b.unlock, unlock: b.unlock, job: job, can: E.canUpgrade(state, b.id, t).ok };
+    });
+  }
+  function mountCastle() {
+    var host = $('#isoHost'); if (!host || !CL.Iso) return;
+    iso = CL.Iso.create(host, { now: now, fmtTime: fmtTime, onTap: tapBuilding, paused: function () { return sceneOpen; } });
+    iso.setModel(castleModel());
+    var hint = $('#isoHint'); if (hint) setTimeout(function () { hint.classList.add('off'); }, 4200);
+  }
+  function updateCastle() { var hud = $('#isoHud'); if (hud) hud.innerHTML = castleHudHTML(); if (iso) iso.setModel(castleModel()); }
+  /* тап по постройке: сначала короткая сценка жителя, затем окно улучшения */
+  function tapBuilding(id) {
+    var b = D.BLD_BY_ID[id]; if (!b) return;
+    if (sceneOpen || modalStack.length) return;
+    if (state.settings.residents === false) { ACT.bld({ id: id }); return; }
+    var active = state.builds.some(function (j) { return j.id === id && j.start != null; });
+    resK[id] = (resK[id] || 0) + 1;
+    var sc = D.residentScene(id, state.bld[id], { locked: state.level < b.unlock, building: active, k: resK[id] });
+    S.click();
+    openScene('res_' + id, { data: sc, replay: true, quick: true, onDone: function () { ACT.bld({ id: id }); } });
+  }
+  function castleListHTML() {
+    var h = '';
+    h += '<div class="bgrid" style="padding:4px 0">';
     D.BUILDINGS.forEach(function (b) {
       var lvl = state.bld[b.id], locked = state.level < b.unlock, c = E.canUpgrade(state, b.id), st;
       var job = state.builds.filter(function (j) { return j.id === b.id; })[0], planned = E.plannedLevel(state, b.id);
@@ -510,7 +553,7 @@
       h += '<div class="bjob"><img src="' + b.img + '"><div class="grow"><b>' + b.name + ' → ' + j.to + '</b><div class="small">Готово через ' + timerSpan(j.end) + '</div>' + bar(t - j.start, j.end - j.start, 'blue') + '</div>' +
         '<button class="btn sm ' + (state.keys >= k ? '' : 'dis') + '" data-act="skipBuild" data-i="' + i + '"><img src="' + IC.key + '">' + k + '</button></div>';
     });
-    for (var f = active.length; f < d.builders; f++) h += '<div class="bjob free">' + (waiting.length ? 'Строитель ждёт: сначала нужен предыдущий уровень' : 'Свободный строитель — выберите постройку ниже') + '</div>';
+    for (var f = active.length; f < d.builders; f++) h += '<div class="bjob free">' + (waiting.length ? 'Строитель ждёт: сначала нужен предыдущий уровень' : 'Свободный строитель — нажмите на постройку на карте') + '</div>';
     waiting.forEach(function (j) {
       var b = D.BLD_BY_ID[j.id], i = q.indexOf(j);
       h += '<div class="bjob wait"><img src="' + b.img + '"><div class="grow"><b>' + b.name + ' → ' + j.to + '</b><div class="small muted">Ждёт строителя · ' + fmtTime(j.ms) + '</div></div><button class="btn sec sm" data-act="cancelBuild" data-i="' + i + '">Отменить</button></div>';
@@ -769,11 +812,11 @@
   var sceneOpen = false;
   function openScene(id, opt) {
     opt = opt || {};
-    var sc = E.sceneData(id); if (!sc) { if (opt.onDone) opt.onDone(); return; }
+    var sc = opt.data || E.sceneData(id); if (!sc) { if (opt.onDone) opt.onDone(); return; }
     sceneOpen = true; auto = false;
-    var el = document.createElement('div'); el.className = 'story intro'; $('#app').appendChild(el);
+    var el = document.createElement('div'); el.className = opt.quick ? 'story resi' : 'story intro'; $('#app').appendChild(el);
     var motes = ''; for (var m = 0; m < 14; m++) motes += '<i style="left:' + (m * 7.3 % 100).toFixed(1) + '%;--t:' + (7 + m % 5 * 1.6).toFixed(1) + 's;--dl:' + (m * 0.63).toFixed(2) + 's;--mx:' + ((m % 2 ? 1 : -1) * (20 + m * 3)) + 'px"></i>';
-    el.innerHTML = '<div class="scene"><img class="lay bg" src="' + sc.img + '" alt=""><img class="lay fg" src="' + sc.img + '" alt=""><div class="motes">' + motes + '</div>' +
+    el.innerHTML = '<div class="scene"><img class="lay bg" src="' + sc.img + '" alt=""><img class="lay fg" src="' + sc.img + '" alt=""><div class="motes">' + motes + '</div>' + (sc.sprite ? '<img class="spr" src="' + sc.sprite + '" alt="">' : '') +
       '<div class="actor l"><img alt=""></div><div class="actor r"><img alt=""></div><div class="vig"></div><div class="lb t"></div><div class="lb b"></div>' +
       '<div class="ttl">' + esc(sc.kicker || '') + '<b>' + esc(sc.title || '') + '</b></div></div>' +
       '<div class="dlg"><div class="who"><img id="sPort" alt=""><b id="sName"></b></div><div class="txt" id="sTxt"></div><div class="choices" id="sCh"></div>' +
@@ -827,6 +870,7 @@
       if (!opt.replay) E.endScene(state);
       sceneOpen = false; save(); refreshAll();
       if (opt.onDone) opt.onDone(); else setTimeout(pumpScenes, 400);
+      setTimeout(function () { if (screen === 'castle' && iso) updateCastle(); }, 0);
     }
     el.addEventListener('click', function (e) {
       if (e.target.id === 'sSkip') { finish(); return; }
@@ -846,7 +890,7 @@
       if (typing) { clearInterval(typing); typing = null; el.querySelector('#sTxt').textContent = full; return; }
       li++; if (li >= lines.length) finish(); else show();
     });
-    li = 0; setTimeout(show, 700);
+    li = 0; setTimeout(show, opt.quick ? 260 : 700);
   }
   /* показать следующую катсцену из очереди движка, когда ничего не мешает */
   function pumpScenes() {
@@ -890,12 +934,13 @@
     dialog('<h2>Настройки</h2>' +
       '<button class="btn sec wide" data-act="toggleSound">' + (s.sound ? '🔊 Звук: вкл' : '🔇 Звук: выкл') + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="turbo">' + (s.turbo ? '⚡ Турбо-вращение: вкл' : '⚡ Турбо-вращение: выкл') + '</button><div style="height:8px"></div>' +
+      '<button class="btn sec wide" data-act="toggleResidents">' + (s.residents === false ? '💬 Сценки жителей: выкл' : '💬 Сценки жителей: вкл') + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="paytable">📜 Выплаты и RTP</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="export">💾 Экспорт сохранения</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="import">📥 Импорт сохранения</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="reset" style="color:var(--bad)">Начать заново</button>' +
       (window.CLPlatform && CLPlatform.settingsHTML ? CLPlatform.settingsHTML() : '') +
-      '<p class="small muted">Замок удачи 2.0 · офлайн · сохранение v' + D.SAVE_VERSION + '<br>Без рейтингов, без покупок, без интернета.</p>', [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
+      '<p class="small muted">Замок удачи 3.0 · офлайн · сохранение v' + D.SAVE_VERSION + '<br>Без рейтингов, без покупок, без интернета.</p>', [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
   }
   function profileDialog() {
     var d = E.derived(state), st = state.stats;
@@ -934,6 +979,11 @@
       S.chest(); showReward(D.CHESTS[tier].name, r.loot, D.CHESTS[tier].img); refreshAll();
     },
     bld: function (d) { var b = D.BLD_BY_ID[d.id]; openSheet(b.name, function () { return buildingHTML(d.id); }); },
+    bqueue: function () { openSheet('Стройка', function () { return buildQueueHTML(); }); },
+    bldList: function () { openSheet('Постройки замка', function () { return castleListHTML(); }); },
+    isoZoom: function (d) { if (iso) iso.zoomBy(+d.f); },
+    isoHome: function () { if (iso) iso.home(); },
+    toggleResidents: function () { state.settings.residents = state.settings.residents === false; save(); closeModal(); settingsDialog(); },
     upgrade: function (d) {
       var r = E.upgrade(state, d.id, now()); if (!r.ok) return fail(r);
       S.build(); toast(D.BLD_BY_ID[d.id].name + ' → ' + r.to + ': ' + (r.started ? 'стройка началась, ' + fmtTime(r.ms) : 'добавлено в очередь'), D.BLD_BY_ID[d.id].img);
@@ -1066,7 +1116,7 @@
     go: go, saveNow: saveNow, refresh: refreshAll, closeAll: closeAllModals,
     fps: function () { return fps.samples.slice(); },
     setTurbo: function (v) { state.settings.turbo = !!v; },
-    openStory: openStory, openScene: openScene, cardPop: cardPop, pumpScenes: pumpScenes, openViewer: openViewer, sceneOpen: function () { return sceneOpen; }, openBuilding: function (id) { ACT.bld({ id: id }); },
+    openStory: openStory, openScene: openScene, cardPop: cardPop, pumpScenes: pumpScenes, openViewer: openViewer, sceneOpen: function () { return sceneOpen; }, openBuilding: function (id) { ACT.bld({ id: id }); }, tapBuilding: function (id) { tapBuilding(id); }, iso: function () { return iso; },
     openCollection: function (id) { ACT.col({ id: id }); }, queueLen: function () { return queue.length; },
     setQtab: function (t) { qtab = t; },
     /* кнопка «Назад» Android: закрыть верхнее окно; false — окон нет, можно спросить о выходе */
