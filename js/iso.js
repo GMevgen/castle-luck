@@ -22,7 +22,7 @@
     var k = y * s.mw + x; return (m[k >> 3] >> (7 - (k & 7))) & 1;
   }
   function preload() {
-    var list = ['map', 'ruins', 'scaffold', 'orchard', 'garden', 'dragon_head', 'smith0', 'smith1', 'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'];
+    var list = ['map', 'ruins', 'scaffold', 'orchard', 'garden', 'smith0', 'smith1', 'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7'];
     D.BUILDINGS.forEach(function (b) { for (var t = 1; t <= 3; t++) list.push(b.id + '_' + t); });
     list.forEach(img);
   }

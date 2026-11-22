@@ -943,7 +943,7 @@
       '<button class="btn sec wide" data-act="import">📥 Импорт сохранения</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="reset" style="color:var(--bad)">Начать заново</button>' +
       (window.CLPlatform && CLPlatform.settingsHTML ? CLPlatform.settingsHTML() : '') +
-      '<p class="small muted">Замок удачи 4.0 · офлайн · сохранение v' + D.SAVE_VERSION + '<br>Без рейтингов, без покупок, без интернета.</p>', [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
+      '<p class="small muted">Замок удачи 5.0 · офлайн · сохранение v' + D.SAVE_VERSION + '<br>Без рейтингов, без покупок, без интернета.</p>', [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
   }
   function profileDialog() {
     var d = E.derived(state), st = state.stats;
