@@ -50,7 +50,12 @@
       var bar = $('#dbar'); if (bar) { bar.classList.remove('burst'); void bar.offsetWidth; bar.classList.add('burst'); }
       U.toast('Сбор дня: ' + U.fmt(m.need) + ' — ' + rewardText(m.res), X.dailyItem(U.now()).img); U.S.win();
     });
-    if (r.raidCharge) U.toast('⚔ Новый заряд набега! Соседи нервничают.', 'img/rival/0.webp');
+    if (r.swordLocked) U.toast('⚔ Мечи! Атаки на соседей откроются на ' + D.RAID.unlock + ' уровне.', 'img/sym/9.webp');
+    if (r.swordCoins) U.toast('⚔ Атак уже ' + D.RAID.maxCharges + ' — лишние мечи переплавлены в +' + U.fmt(r.swordCoins) + ' монет', 'img/sym/9.webp');
+    if (r.swordAttack && onSlot) {   // как в «Монеточке»: мечи сразу ведут к выбору цели
+      U.setAuto(false); U.S.win(); U.toast(r.swordAttack > 1 ? '⚔⚔ Три меча — две атаки!' : '⚔ Два меча — атака!', 'img/sym/9.webp');
+      setTimeout(function () { if (!document.querySelector('.mg') && !U.modalCount()) chooseScreen(); }, 900);
+    }
     if (r.raidShield) U.toast('🛡 Новый щит — теперь набег соседа отскочит.', 'img/sym/7.webp');
     updateSlot();
   }
@@ -66,29 +71,82 @@
     var s = st(), r = s.raid;
     if (!X.raidOpen(s)) return '<p class="muted">Набеги откроются на ' + D.RAID.unlock + ' уровне. Соседи пока присматриваются к вашему замку.</p>';
     var h = '<div class="rvhud"><span class="pill">⚔ ' + r.charges + '/' + D.RAID.maxCharges + '</span><span class="pill">🛡 ' + r.shields + '/' + D.RAID.maxShields + '</span>' +
-      '<span class="small muted">заряд — каждые ' + D.RAID.chargeEvery + ' вращений, щит — каждые ' + D.RAID.shieldEvery + '</span></div>';
+      '<span class="small muted"><img src="img/sym/9.webp" style="width:16px;vertical-align:-3px;border-radius:4px"> 2 меча на барабанах — атака, 3 — две; щит — каждые ' + D.RAID.shieldEvery + ' вращений</span></div>'; if (r.charges) h += '<button class="btn green" style="width:100%;margin:6px 0" data-act="rChoose">⚔ Атаковать соседа (' + r.charges + ')</button>';
     var dmg = Object.keys(r.dmg);
     if (dmg.length) h += '<div class="card warn"><b>Повреждено набегами:</b>' + dmg.map(function (id) { return '<div class="row" style="margin-top:6px"><img src="' + D.BLD_BY_ID[id].img + '" style="width:40px;height:40px;object-fit:contain"><span class="grow">' + D.BLD_BY_ID[id].name + '</span><button class="btn green sm" data-act="xRepair" data-id="' + id + '">Починить · ' + U.fmtK(X.repairCost(s)) + '</button></div>'; }).join('') + '</div>';
     h += '<div class="tabs"><button data-act="rTab" data-t="rivals" class="' + (rtab === 'rivals' ? 'on' : '') + '">Соседи</button><button data-act="rTab" data-t="log" class="' + (rtab === 'log' ? 'on' : '') + '">Журнал</button></div>';
     if (rtab === 'rivals') h += D.RIVALS.map(function (rv) {
-      var c = D.CHARS[rv.who];
-      return '<div class="rv"><img src="' + c.img + '" alt=""><div class="grow"><b>' + c.name + '</b><div class="small muted">' + rv.village + '</div></div><button class="btn sm ' + (r.charges ? 'green' : 'sec') + '" data-act="rAttack" data-id="' + rv.id + '">⚔ Набег</button></div>';
+      var c = D.CHARS[rv.who], R = X.rival(s, rv.id, U.now());
+      return '<div class="rv"><img src="' + c.img + '" alt=""><div class="grow"><b>' + c.name + '</b><div class="small muted">' + rv.village + '</div><div class="small">🏰 ур. ' + R.lvl + ' · <img src="' + U.IC.coin + '" style="width:14px;vertical-align:-2px"> ' + U.fmtK(R.coins) + ' · ' + (R.shield ? '🛡 щит' : '<span class="ok">без щита</span>') + '</div></div><button class="btn sm ' + (r.charges ? 'green' : 'sec') + '" data-act="rAttack" data-id="' + rv.id + '">⚔ Атака</button></div>';
     }).join('');
     else h += r.log.length ? r.log.map(function (e) {
       var c = D.CHARS[D.RIVAL_BY_ID[e.rival].who], txt;
-      if (e.dir === 'out') txt = e.blocked ? 'Набег на ' + c.name + ': щит соседа выдержал' : (e.revenge ? 'Месть! ' : '') + 'Набег на ' + c.name + ': ' + (e.steal ? '+' + U.fmt(e.coins) + ' монет' : 'разрушено «' + D.BLD_BY_ID[e.bld].name + '», +' + U.fmt(e.coins) + ' монет');
+      if (e.dir === 'out') txt = e.blocked ? 'Атака на ' + c.name + ': щит соседа принял удар' : (e.revenge ? 'Месть! ' : '') + 'Атака на ' + c.name + ': ' + (e.steal ? '+' + U.fmt(e.coins) + ' монет' : (e.hit && !e.destroyed ? 'удар по «' : 'разрушено «') + D.BLD_BY_ID[e.bld].name + '», +' + U.fmt(e.coins) + ' монет');
       else txt = c.name + (e.blocked ? ' напал — щит выдержал' : e.steal ? ' украл ' + U.fmt(e.coins) + ' монет' : ' повредил «' + D.BLD_BY_ID[e.dmg].name + '»');
       var rev = e.dir === 'in' && !e.blocked && !e.revenged ? '<button class="btn green sm" data-act="rAttack" data-id="' + e.rival + '" data-rev="' + e.id + '">Отомстить</button>' : '';
       return '<div class="rv log ' + e.dir + '"><img src="' + c.img + '" alt=""><div class="grow"><div class="small">' + (e.dir === 'in' ? '⬅ ' : '➡ ') + txt + '</div><div class="small muted">' + ago(e.t) + '</div></div>' + rev + '</div>';
     }).join('') : '<p class="muted">Пока тихо. Подозрительно тихо.</p>';
     return h;
   }
-  function attackDialog(id, rev) {
-    var rv = D.RIVAL_BY_ID[id], c = D.CHARS[rv.who], s = st();
-    if (rev == null && s.raid.charges <= 0) { U.toast('Нет зарядов набега — они копятся от вращений Колеса'); return; }
-    U.dialog('<img src="' + c.img + '" class="rvport"><h2>' + (rev != null ? 'Месть: ' : 'Набег: ') + rv.village + '</h2><p class="small">Куда бьём? ' + (rev != null ? 'Месть приносит в полтора раза больше.' : 'У соседа может сработать щит.') + '</p>' +
-      '<div class="rvt">' + rv.blds.map(function (b, i) { return '<button class="rvb" data-act="rHit" data-id="' + id + '" data-i="' + i + '"' + (rev != null ? ' data-rev="' + rev + '"' : '') + '><img src="' + D.BLD_BY_ID[b].img + '"><span>' + D.BLD_BY_ID[b].name + '</span></button>'; }).join('') + '</div>',
-      [{ t: 'Отступить', act: 'close', cls: 'sec' }]);
+  /* ---- 0.6.1: атака как в «Монеточке» — выбор соседа, затем его деревня и удар по постройке ---- */
+  function grudge(id) { return st().raid.log.filter(function (e) { return e.dir === 'in' && !e.blocked && !e.revenged && e.rival === id; })[0]; }
+  function chooseScreen() {
+    var s = st(); if (!X.raidOpen(s)) { U.toast('Атаки откроются на ' + D.RAID.unlock + ' уровне'); return; }
+    var el = overlay('mg-atk', '<div class="mg-top"><b>⚔ Атака! Кого навестим?</b><span class="pill">⚔ ' + s.raid.charges + '</span><button class="btn sec sm" data-x="quit">Позже</button></div>' +
+      '<p class="small atk-sub">Выберите соседа. Богатая казна — богаче добыча; щит примет первый удар на себя.</p><div class="atk-list">' +
+      D.RIVALS.map(function (rv) {
+        var c = D.CHARS[rv.who], R = X.rival(s, rv.id, U.now()), g = grudge(rv.id);
+        return '<button class="atk-card" data-id="' + rv.id + '"' + (g ? ' data-rev="' + g.id + '"' : '') + '><img src="' + c.img + '" alt=""><div class="grow"><b>' + c.name + '</b>' + (g ? ' <span class="atk-tag">обидчик · месть ×1,5</span>' : '') +
+          '<div class="small muted">' + rv.village + '</div><div class="atk-stats"><span>🏰 ур. ' + R.lvl + '</span><span><img src="' + U.IC.coin + '"> ' + U.fmtK(R.coins) + '</span><span class="' + (R.shield ? 'sh' : 'nosh') + '">' + (R.shield ? '🛡 щит поднят' : 'без щита') + '</span></div>' +
+          '<div class="atk-hp">' + R.hp.map(function (h) { return '<i class="h' + h + '"></i>'; }).join('') + '</div></div></button>';
+      }).join('') + '</div>');
+    el.addEventListener('click', function (e) {
+      if (e.target.dataset.x === 'quit') { el.remove(); updateSlot(); return; }
+      var b = e.target.closest('.atk-card'); if (b) { el.remove(); villageScreen(b.dataset.id, b.dataset.rev != null ? +b.dataset.rev : null); }
+    });
+  }
+  function tier(l) { return l < 6 ? 1 : l < 12 ? 2 : 3; }
+  var SPOTS = [[27, 34], [73, 34], [27, 72], [73, 72]];
+  function villageScreen(id, rev) {
+    var s = st(), rv = D.RIVAL_BY_ID[id], c = D.CHARS[rv.who], R = X.rival(s, id, U.now()), busy = false;
+    if (rev == null && s.raid.charges <= 0) { U.toast('Нет атак — выбейте два меча на барабанах', 'img/sym/9.webp'); return; }
+    var el = overlay('mg-atk', '');
+    function draw() {
+      var shield = R.shield && rev == null;
+      el.innerHTML = '<div class="mg-top"><img class="atk-pt" src="' + c.img + '"><div class="grow"><b>' + rv.village + '</b><div class="small">🏰 ур. ' + R.lvl + ' · <img src="' + U.IC.coin + '" style="width:14px;vertical-align:-2px"> <span id="aCoins">' + U.fmtK(R.coins) + '</span></div></div>' +
+        '<span class="pill">' + (rev != null ? '⚔ месть' : '⚔ ' + s.raid.charges) + '</span><button class="btn sec sm" data-x="quit">Отступить</button></div>' +
+        '<div class="vil' + (shield ? ' shielded' : '') + '">' + (shield ? '<div class="dome"></div>' : '') +
+        rv.blds.map(function (b, i) {
+          var h = R.hp[i], img = h > 0 ? 'img/iso/' + b + '_' + tier(R.lvl) + '.webp' : 'img/iso/ruins.webp';
+          return '<button class="vb h' + h + '" data-i="' + i + '" style="left:' + SPOTS[i][0] + '%;top:' + SPOTS[i][1] + '%"' + (h ? '' : ' disabled') + '><img src="' + img + '" alt=""><span class="vn">' + D.BLD_BY_ID[b].name + '</span><span class="atk-hp">' + [0, 1].map(function (k) { return '<i class="h' + (k < h ? 2 : 0) + '"></i>'; }).join('') + '</span></button>';
+        }).join('') + '</div><p class="small atk-sub">' + (shield ? '🛡 У соседа поднят щит — первый удар он примет на себя.' : rev != null ? 'Месть проходит сквозь щит и приносит ×1,5.' : 'Коснитесь постройки, чтобы ударить. Разрушение — больше монет и 2 печати.') + '</p>';
+    }
+    draw();
+    el.addEventListener('click', function (e) {
+      if (e.target.dataset.x === 'quit') { el.remove(); updateSlot(); return; }
+      if (e.target.dataset.x === 'more') { el.remove(); chooseScreen(); return; }
+      if (e.target.dataset.x === 'done') { el.remove(); U.refreshAll(); return; }
+      var b = e.target.closest('.vb'); if (!b || busy || b.disabled) return;
+      var r = X.attack(s, id, +b.dataset.i, U.rng, U.now(), rev); if (!r.ok) { U.toast(r.reason); return; }
+      busy = true; after(); U.saveNow && U.saveNow();
+      var vil = $('.vil', el), sw = document.createElement('img'); sw.src = 'img/ui/sword.webp'; sw.className = 'atk-sword';
+      sw.style.left = b.style.left; sw.style.top = b.style.top; vil.appendChild(sw);
+      setTimeout(function () {
+        if (r.blocked) { var d = $('.dome', el); if (d) d.classList.add('break'); sw.classList.add('bounce'); U.S.error(); }
+        else {
+          U.S.coin(); b.classList.add('shake');
+          for (var k = 0; k < 7; k++) { var p = document.createElement('i'); p.className = 'puff'; p.style.left = b.style.left; p.style.top = b.style.top; p.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px'); p.style.setProperty('--dy', (-Math.random() * 70 - 10) + 'px'); vil.appendChild(p); }
+        }
+        var f = document.createElement('span'); f.className = 'atk-float'; f.style.left = b.style.left; f.style.top = b.style.top; f.textContent = '+' + U.fmtK(r.coins); vil.appendChild(f);
+      }, 420);
+      setTimeout(function () {
+        var more = s.raid.charges > 0;
+        draw(); el.insertAdjacentHTML('beforeend', '<div class="atk-res"><img src="' + c.img + '"><div class="grow"><b>' + (r.blocked ? 'Щит соседа!' : r.revenge ? 'Месть свершилась!' : r.destroyed ? 'Разрушено «' + D.BLD_BY_ID[r.bld].name + '»!' : 'Точный удар!') + '</b><p class="rvq">«' + U.esc(D.g(r.quip)) + '»</p>' +
+          '<div>' + (r.blocked ? 'Утешительные монеты' : 'Добыча') + ': <b>+' + U.fmt(r.coins) + '</b> монет' + (r.seals ? ', +' + r.seals + ' печати' : '') + (r.rebuilt ? '<br><span class="small muted">Деревня разрушена до основания — сосед отстраивается и растёт до ' + R.lvl + ' ур.</span>' : '') + '</div>' +
+          '<div class="row" style="margin-top:8px">' + (more ? '<button class="btn green sm grow" data-x="more">⚔ Ещё атака (' + s.raid.charges + ')</button>' : '') + '<button class="btn ' + (more ? 'sec' : 'green') + ' sm grow" data-x="done">Готово</button></div></div></div>');
+        U.refreshAll();
+      }, 1250);
+    });
   }
 
   /* ================= мини-игры: меню и лавка ================= */
@@ -106,6 +164,7 @@
   }
   function overlay(cls, html) {
     U.closeAll(); U.setAuto(false);
+    var old = document.querySelector('.mg-atk'); if (old) old.remove();   // экран атаки можно открыть позже из «Набегов» — заряд не пропадает
     var el = document.createElement('div'); el.className = 'mg ' + cls; el.innerHTML = html; $('#app').appendChild(el); return el;
   }
   function result(title, r, img, extra) {
@@ -292,17 +351,8 @@
     mBuy: function (d) { var r = X.shopBuy(st(), d.id, U.rng, U.now()); if (!r.ok) { U.toast(r.reason || 'Нельзя'); U.S.error(); return; } U.toast('Куплено: ' + rewardText(r), U.IC.energy); U.S.coin(); after(); U.refreshSheet(); },
     raids: function () { U.closeAll(); U.openSheet('Набеги', raidsHTML); },
     rTab: function (d) { rtab = d.t; U.refreshSheet(); },
-    rAttack: function (d) { attackDialog(d.id, d.rev != null ? +d.rev : null); },
-    rHit: function (d) {
-      var rv = D.RIVAL_BY_ID[d.id], c = D.CHARS[rv.who];
-      var r = X.attack(st(), d.id, +d.i, U.rng, U.now(), d.rev != null ? +d.rev : null); U.closeModal();
-      if (!r.ok) { U.toast(r.reason); return; }
-      U.S[r.blocked ? 'error' : 'win']();
-      U.dialog('<img src="' + c.img + '" class="rvport"><h2>' + (r.blocked ? 'Щит соседа!' : r.revenge ? 'Месть свершилась!' : 'Удачный набег!') + '</h2><p class="rvq">«' + U.esc(D.g(r.quip)) + '»</p><p>' +
-        (r.blocked ? 'Утешительные монеты: +' + U.fmt(r.coins) : r.steal ? 'Украдено: <b>+' + U.fmt(r.coins) + '</b> монет' : 'Разрушено «' + D.BLD_BY_ID[r.bld].name + '»: +' + U.fmt(r.coins) + ' монет, +' + r.seals + ' печати') + '</p>',
-        [{ t: 'К соседям', act: 'raids', cls: 'sec' }]);
-      after(); U.refreshAll();
-    },
+    rAttack: function (d) { villageScreen(d.id, d.rev != null ? +d.rev : null); },
+    rChoose: function () { chooseScreen(); },
     xRepair: function (d) { var r = X.repair(st(), d.id); if (!r.ok) { U.toast(r.reason); U.S.error(); return; } U.toast(D.BLD_BY_ID[d.id].name + ' починена!', D.BLD_BY_ID[d.id].img); U.S.build(); after(); U.refreshSheet(); U.refreshAll(); },
     chainClaim: function () { var r = X.chainClaim(st(), U.rng, U.now()); if (!r.ok) return; result('Часть главы пройдена!', r.reward, 'img/guide/raven.webp'); setTimeout(U.pumpScenes, 600); },
     chainReplay: function () { var s = st(); U.openScene(X.chainSceneId(s.chain.n, s.chain.k), { replay: true }); }

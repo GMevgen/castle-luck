@@ -22,20 +22,25 @@
     { id: 'en', name: 'Энергия', ico: 'energy', energy: 25, price: 60, day: 5 },
     { id: 'mana', name: 'Кристаллы маны', ico: 'mana', mana: 40, price: 50, day: 5 },
     { id: 'seal', name: 'Печати гильдии', ico: 'seal', seals: 10, price: 80, day: 3 },
-    { id: 'key', name: 'Ключ', ico: 'key', keys: 1, price: 90, day: 2 }
+    { id: 'key', name: 'Ключ', ico: 'key', keys: 1, price: 900, day: 2 }   // 0.6.1: было 90 (×10)
   ];
   D.SWEEP = { n: 9, mines: 10, bonus: 14 };
-  D.RAID = { unlock: 4, maxCharges: 3, maxShields: 3, chargeEvery: 12, shieldEvery: 30, npcMin: 5 * H, npcSpread: 5 * H, npcMaxOffline: 2 };
+  /* 0.6.1: заряды атак дают только мечи на барабанах (2 меча — 1 атака, 3 — 2); раньше — 1 заряд каждые 12 вращений */
+  D.RAID = { unlock: 4, maxCharges: 3, maxShields: 3, shieldEvery: 30, npcMin: 5 * H, npcSpread: 5 * H, npcMaxOffline: 2 };
   D.RIVALS = [
-    { id: 'baron', who: 'baron', village: 'Шнапсбург', blds: ['citadel', 'treasury', 'market'],
+    { id: 'baron', who: 'baron', village: 'Шнапсбург', blds: ['citadel', 'treasury', 'market', 'warehouse'],
       lose: 'Мои усы! То есть мои монеты! Это одно и то же!', win: 'Ха! Мой щит крепче вашего характера!', hit: 'Барон фон Шнапс разграбил казну! Говорят, он смеялся в усы. В оба.' },
-    { id: 'griz', who: 'griz', village: 'Кривая Топь', blds: ['tower', 'academy', 'warehouse'],
+    { id: 'griz', who: 'griz', village: 'Кривая Топь', blds: ['tower', 'academy', 'warehouse', 'library'],
       lose: 'Ой-ой, мой котёл! Ладно, ладно, забирай. Но чай я не отдам.', win: 'Мой щит заговорён, {милок|милочка}. И слегка пахнет жабой.', hit: 'Ведьма Гризельда наслала ветер — и половина монет улетела в её котёл.' },
-    { id: 'krax', who: 'krax', village: 'Процентово', blds: ['treasury', 'library', 'market'],
-      lose: 'Это грабёж! Я запишу в книгу. С процентами. Против себя.', win: 'Щит, {милорд|милорд}, тоже взят в долг. Но он работает.', hit: 'Кракс-ростовщик взыскал «старый долг вашего деда». Долга не было. Монет тоже больше нет.' },
-    { id: 'unylot', who: 'unylot', village: 'Дождливый Утёс', blds: ['citadel', 'forge', 'gallery'],
+    { id: 'krax', who: 'krax', village: 'Процентово', blds: ['treasury', 'library', 'market', 'gallery'],
+      lose: 'Это грабёж! Я запишу в книгу. С процентами. Против себя.', win: 'Щит, {милорд|миледи}, тоже взят в долг. Но он работает.', hit: 'Кракс-ростовщик взыскал «старый долг вашего деда». Долга не было. Монет тоже больше нет.' },
+    { id: 'unylot', who: 'unylot', village: 'Дождливый Утёс', blds: ['citadel', 'forge', 'gallery', 'academy'],
       lose: 'Я так и знал. Я всегда всё знаю заранее. Это грустно.', win: 'Щит выдержал. Даже радоваться не хочется. Как всегда.', hit: 'Сэр Унылот вежливо постучал, извинился — и сломал вам стену. Очень печально.' }
   ];
+  /* 0.6.1: у каждого соседа — уровень замка (идёт за уровнем игрока), казна (копится за 6 ч), щит (восстанавливается за 3–6 ч)
+     и 4 постройки по 2 «жизни». Награда за удар — доля его казны: 10%, за разрушение — 18%; всё разрушено — деревня отстраивается, уровень +1. */
+  D.RIVAL_META = { baron: { off: 0, wealth: 1.2 }, griz: { off: 1, wealth: 1 }, krax: { off: 2, wealth: 1.6 }, unylot: { off: -1, wealth: 0.8 } };
+  D.RIVAL_ECON = { capB: 200, regenMs: 6 * H, shieldMin: 3 * H, shieldSpread: 3 * H, hitShare: 0.10, killShare: 0.18, minB: 3, blockB: 3, fullB: 5 };
   D.RIVAL_BY_ID = {}; D.RIVALS.forEach(function (r) { D.RIVAL_BY_ID[r.id] = r; });
 
   /* ---------- состояние: новые поля (для старых сохранений дозаполняются в E.migrate) ---------- */
@@ -47,7 +52,8 @@
     s.raid = { charges: 1, shields: 1, spinN: 0, log: [], dmg: {}, nextT: now + 8 * H, seq: 0 };
     s.chain = { n: 1, k: 0, base: null };
     s.stats.raids = 0; s.stats.miniPlays = 0; s.stats.dailyItems = 0; s.stats.chainSteps = 0;
-    s.tut.x2 = false;
+    s.tut.x2 = false; s.tut.x3 = false;
+    s.raid.rv = {};
     return s;
   };
   function today(s, t) { return E.dayKey(t != null ? t : s.time.high); }
@@ -84,9 +90,13 @@
     var out = _spin(s, now, rng); if (!out.ok) return out;
     var t = s.time.high, v = D.DAILY_DROP.v[rng.weighted(D.DAILY_DROP.w)];
     out.dailyItems = v * out.bet; out.dailyMiles = X.addDaily(s, out.dailyItems, rng, t);
+    if (s.level < D.RAID.unlock && out.line.attack > 0) out.swordLocked = true;
     if (s.level >= D.RAID.unlock) {
       var r = s.raid; r.spinN++;
-      if (r.spinN % D.RAID.chargeEvery === 0 && r.charges < D.RAID.maxCharges) { r.charges++; out.raidCharge = true; }
+      if (out.line.attack > 0) {   // мечи на линии → атаки (сверх 3 — утешительные монеты)
+        var add = Math.min(out.line.attack, D.RAID.maxCharges - r.charges); r.charges += add; out.swordAttack = add;
+        if (add < out.line.attack) out.swordCoins = reward(s, { coinsB: D.RIVAL_ECON.fullB * (out.line.attack - add) }, rng, t).coins;
+      }
       if (r.spinN % D.RAID.shieldEvery === 0 && r.shields < D.RAID.maxShields) { r.shields++; out.raidShield = true; }
     }
     return out;
@@ -97,26 +107,44 @@
   /* ---------- набеги ---------- */
   function logPush(s, e) { s.raid.seq++; e.id = s.raid.seq; s.raid.log.unshift(e); if (s.raid.log.length > 25) s.raid.log.length = 25; return e; }
   X.raidOpen = function (s) { return s.level >= D.RAID.unlock; };
+  X.rivalCap = function (s, id, lvl) { return Math.round(D.baseCoin(lvl) * D.RIVAL_ECON.capB * D.RIVAL_META[id].wealth); };
+  X.rival = function (s, id, t) {
+    if (!s.raid.rv) s.raid.rv = {};
+    var M = D.RIVAL_META[id], R = s.raid.rv[id], want = Math.max(1, s.level + M.off);
+    if (!R) { R = s.raid.rv[id] = { lvl: want, coins: 0, coinsT: t, shield: D.RIVALS.map(function (r) { return r.id; }).indexOf(id) % 2 === 0, shieldT: t, hp: [2, 2, 2, 2] }; R.coins = Math.round(X.rivalCap(s, id, R.lvl) * 0.7); }
+    if (R.lvl < want) R.lvl = want;
+    var cap = X.rivalCap(s, id, R.lvl), dt = Math.max(0, t - R.coinsT);
+    R.coins = Math.min(cap, Math.round(R.coins + cap * dt / D.RIVAL_ECON.regenMs)); R.coinsT = t;
+    if (!R.shield && t - R.shieldT >= D.RIVAL_ECON.shieldMin + Math.floor(hash01(R.shieldT + id.length) * D.RIVAL_ECON.shieldSpread)) R.shield = true;
+    R.cap = cap; return R;
+  };
   X.attack = function (s, rivalId, bldIdx, rng, now, revengeId) {
     var rv = D.RIVAL_BY_ID[rivalId]; if (!rv) return { ok: false, reason: 'Нет такого соседа' };
-    if (!X.raidOpen(s)) return { ok: false, reason: 'Набеги откроются на ' + D.RAID.unlock + ' уровне' };
+    if (!X.raidOpen(s)) return { ok: false, reason: 'Атаки откроются на ' + D.RAID.unlock + ' уровне' };
     var rev = null;
     if (revengeId != null) {
       rev = s.raid.log.filter(function (e) { return e.id === revengeId; })[0];
       if (!rev || rev.dir !== 'in' || rev.revenged || rev.rival !== rivalId) return { ok: false, reason: 'Месть уже свершилась' };
-    } else if (s.raid.charges <= 0) return { ok: false, reason: 'Нет зарядов набега — крутите Колесо' };
+    } else if (s.raid.charges <= 0) return { ok: false, reason: 'Нет атак — выбейте два меча на барабанах' };
+    var R = X.rival(s, rivalId, now), bi = ((bldIdx | 0) % 4 + 4) % 4;
+    if (R.hp[bi] <= 0) return { ok: false, reason: 'Эта постройка уже разрушена — выберите другую' };
     if (rev) rev.revenged = true; else s.raid.charges--;
-    var d = E.derived(s, now), mul = rev ? 1.5 : 1, bld = rv.blds[bldIdx % rv.blds.length], res;
-    s.stats.raids++;
-    if (!rev && rng.chance(0.25)) {   // у соседа сработал щит
-      res = reward(s, { coinsB: 3 }, rng, now);
+    var d = E.derived(s, now), bld = rv.blds[bi], res; s.stats.raids++;
+    if (R.shield && !rev) {   // щит соседа принимает удар на себя и ломается (месть щит не останавливает)
+      R.shield = false; R.shieldT = now;
+      res = reward(s, { coinsB: D.RIVAL_ECON.blockB }, rng, now);
       logPush(s, { dir: 'out', rival: rivalId, t: now, blocked: true, bld: bld, coins: res.coins || 0 });
-      return { ok: true, blocked: true, coins: res.coins || 0, bld: bld, quip: rv.win };
+      return { ok: true, blocked: true, coins: res.coins || 0, bld: bld, bi: bi, quip: rv.win, rival: R };
     }
-    var steal = rng.chance(0.6);
-    res = reward(s, steal ? { coinsB: Math.round(rng.range(15, 40) * mul) } : { coinsB: Math.round(10 * mul), seals: 2 }, rng, now);
-    logPush(s, { dir: 'out', rival: rivalId, t: now, steal: steal, bld: bld, coins: res.coins || 0, seals: res.seals || 0, revenge: !!rev });
-    return { ok: true, steal: steal, coins: res.coins || 0, seals: res.seals || 0, bld: bld, revenge: !!rev, quip: rv.lose };
+    R.hp[bi]--; var destroyed = R.hp[bi] === 0, share = destroyed ? D.RIVAL_ECON.killShare : D.RIVAL_ECON.hitShare;
+    var take = Math.max(Math.round(R.coins * share), Math.round(D.baseCoin(R.lvl) * D.RIVAL_ECON.minB));
+    R.coins = Math.max(0, R.coins - take);
+    var amt = take * (rev ? 1.5 : 1);
+    res = reward(s, destroyed ? { coinsB: amt / d.B / d.coinMul, seals: 2 } : { coinsB: amt / d.B / d.coinMul }, rng, now);
+    var rebuilt = R.hp.every(function (h) { return h <= 0; });
+    if (rebuilt) { R.hp = [2, 2, 2, 2]; R.lvl++; R.coins = Math.min(X.rivalCap(s, rivalId, R.lvl), R.coins + Math.round(X.rivalCap(s, rivalId, R.lvl) * 0.3)); }
+    logPush(s, { dir: 'out', rival: rivalId, t: now, hit: true, destroyed: destroyed, bld: bld, coins: res.coins || 0, seals: res.seals || 0, revenge: !!rev });
+    return { ok: true, hit: true, destroyed: destroyed, rebuilt: rebuilt, coins: res.coins || 0, seals: res.seals || 0, bld: bld, bi: bi, revenge: !!rev, quip: rv.lose, rival: R };
   };
   X.repairCost = function (s) { return Math.round(E.derived(s).B * 8); };
   X.repair = function (s, id) {

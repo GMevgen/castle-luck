@@ -359,7 +359,7 @@
   /* Награда за набор символов (без модификаторов). Используется и игрой, и расчётом RTP. */
   E.evalLine = function (syms, bet) {
     var cnt = {}; syms.forEach(function (i) { var id = D.SYMBOLS[i].id; cnt[id] = (cnt[id] || 0) + 1; });
-    var r = { coinsB: 0, energy: 0, xp: D.BASE_XP_PER_BET * bet, mana: 0, keys: 0, cards: 0, cardChance: D.CARD_CHANCE_BASE, chest: -1, triple: null, jackpot: false, counts: cnt };
+    var r = { coinsB: 0, energy: 0, xp: D.BASE_XP_PER_BET * bet, mana: 0, keys: 0, attack: 0, cards: 0, cardChance: D.CARD_CHANCE_BASE, chest: -1, triple: null, jackpot: false, counts: cnt };
     for (var id in cnt) {
       var n = cnt[id], p = D.PAYTABLE[id];
       if (p.coins) r.coinsB += p.coins[n] * bet;
@@ -367,6 +367,7 @@
       if (p.xp) r.xp += p.xp[n] * bet;
       if (p.mana) r.mana += p.mana[n] * bet;
       if (p.keys) r.keys += p.keys[n];
+      if (p.attack) r.attack += p.attack[n];
       if (p.cards) { r.cards += p.cards[n] + (n === 2 && bet >= 5 ? 1 : 0); if (n === 1) r.cardChance += D.CARD_CHANCE_ONE_SYMBOL; }
       if (p.chest && p.chest[n] >= 0) r.chest = p.chest[n];
       if (n === 3) { r.triple = id; if (id === 'crown') r.jackpot = true; }

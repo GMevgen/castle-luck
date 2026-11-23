@@ -922,7 +922,7 @@
     if (sceneOpen || spinning || modalStack.length || queue.length || $('.viewer') || popBusy || tutOpen) return;
     if (!state.hero.chosen) return;
     if (state.tut.news) { state.tut.news = false; save(); toast('Новое в ' + D.APP_VERSION + ': обучение с вороном Карром и выбор героя/героини — в Настройках', 'img/guide/raven.webp'); }
-    var id = E.takeScene(state); if (!id) { if (!state.tut.done && state.scenes.seen.ch_1) startTutorial(); else if (state.tut.done && !state.tut.x2 && state.level >= 2) startTutorial(0, 'x2'); return; }
+    var id = E.takeScene(state); if (!id) { if (!state.tut.done && state.scenes.seen.ch_1) startTutorial(); else if (state.tut.done && !state.tut.x2 && state.level >= 2) startTutorial(0, 'x2'); else if (state.tut.done && state.tut.x2 && !state.tut.x3 && state.level >= 2) startTutorial(0, 'x3'); return; }
     save();
     openScene(id, { onDone: function () {
       if (id === 'ch_1' && !state.tut.done) { setTimeout(startTutorial, 300); return; }
@@ -945,11 +945,12 @@
         if (p.xp) return '+' + p.xp[n] + ' оп.';
         if (p.mana) return '+' + p.mana[n] + ' маны';
         if (p.keys) return p.keys[n] ? '+' + p.keys[n] + ' кл.' : '—';
+        if (p.attack) return p.attack[n] ? '⚔'.repeat(p.attack[n]) + (p.attack[n] > 1 ? ' 2 атаки' : ' атака') : '—';
         if (p.cards) return n === 1 ? String(D.CARD_CHANCE_ONE_SYMBOL * 100).replace('.', ',') + '% карта' : n === 2 ? '50%: 1 карта' : '1–' + p.cards[n] + ' карты';
         if (p.chest) return p.chest[n] < 0 ? '—' : D.CHESTS[p.chest[n]].name.split(' ')[0];
         return '—';
       });
-      return '<tr><td><img src="' + s.img + '"></td><td style="text-align:left">' + s.name + ' <span class="muted small">(' + D.STRIP_COUNTS[s.id] + '/32)</span></td><td>' + c.join('</td><td>') + '</td></tr>';
+      return '<tr><td><img src="' + s.img + '"></td><td style="text-align:left">' + s.name + ' <span class="muted small">(' + D.STRIP_COUNTS[s.id] + '/' + D.STRIP.length + ')</span></td><td>' + c.join('</td><td>') + '</td></tr>';
     }).join('');
     dialog('<h2>Таблица выплат</h2><div style="overflow-x:auto"><table class="paytable" style="width:100%;border-collapse:collapse"><tr class="muted small"><td></td><td></td><td>×1</td><td>×2</td><td>×3</td></tr>' + rows + '</table></div>' +
       '<p class="small" style="text-align:left">Награды за каждый символ складываются и умножаются на ставку. B — базовая монета вашего уровня (сейчас ' + fmt(E.derived(state).B) + '). Каждое вращение также даёт ' + fmtXp(D.BASE_XP_PER_BET * D.XP_MUL) + ' опыта за единицу ставки и ' + String(D.CARD_CHANCE_BASE * 100).replace('.', ',') + '% шанс карты. Карты с символов выпадают каждая с шансом ' + Math.round(D.CARD_DROP_MUL * 100) + '% (при трёх в ряд — минимум одна), в среднем ' + String(st.cards.toFixed(3)).replace('.', ',') + ' карты за вращение. Опыт за свитки в таблице указан до общего множителя ×' + String(D.XP_MUL).replace('.', ',') + '.</p>' +
@@ -979,7 +980,8 @@
     { sel: '#evbar', t: 'Шкала события', x: 'Во время праздников с барабанов падают особые предметы. Они наполняют шкалу над Колесом, а за каждый этап — подарок. Каждый праздник — свой предмет.' },
     { sel: '#dbar', t: 'Дневной сбор', x: 'А это — сбор дня. Каждый день духи долины прячут в барабанах свой предмет — банки светлячков, жёлуди, перья, фонарики… Какой сегодня — видно на значке слева. Собирай — на 100 штук дадут 100 энергии, на 1 000 — тысячу, и так до 50 000! В полночь всё начинается заново, с новым предметом.' },
     { sel: '[data-act="miniMenu"]', t: 'Мини-игры', x: 'Когда надоест крутить — сюда. «Поиск» (5 попыток в день, энергия и шанс на ультраредкую карту), «Бегущий ворон» — это я, между прочим, лечу по трём дорожкам за монетками-мини, и «Магический сапёр» 9×9. Монетки-мини тратятся в мини-лавке.' },
-    { sel: '[data-act="raids"]', t: 'Набеги', x: 'Соседи-бароны не дремлют. Заряды набега ⚔ копятся от вращений — трать их на набеги и уноси монеты. Но соседи бьют в ответ! Щиты 🛡 спасают, журнал помнит каждого обидчика, а кнопка «Отомстить» — лучшее лекарство от обиды.' },
+    { sel: '#reels', t: 'Меч', x: '<img src="img/sym/9.webp" style="width:44px;float:left;margin:0 8px 4px 0;border-radius:10px">Новый символ на барабанах — меч. Два меча на линии — атака на соседа, три меча — сразу две! Как выпадут, я покажу всех четырёх соседей: уровень замка, казна, есть ли щит. Выбирай, к кому в гости.' },
+    { sel: '[data-act="raids"]', t: 'Набеги', x: 'Дальше — деревня соседа: коснись постройки, и меч ударит по ней. Удар уносит десятую часть его казны, разрушение — больше и ещё 2 печати. Поднятый щит 🛡 примет первый удар на себя. Соседи бьют в ответ, но твои щиты (каждые 30 вращений) держат удар, журнал помнит обидчиков, а «Отомстить» проходит сквозь любой щит и даёт ×1,5.' },
     { sel: '#tLvl', t: 'Уровень', x: 'Кольцо вокруг цифры — опыт до следующего уровня. Новый уровень открывает ставки, постройки и коллекции. Нажми — увидишь свою летопись.' },
     { sel: '#nav [data-to="castle"]', t: 'Замок', x: 'А теперь — самое красивое. Здесь твой замок. Пойдём посмотрим!' },
     { screen: 'castle', sel: '#isoHost', t: 'Постройки', x: 'Карту двигают пальцем и приближают щипком. Каждая постройка что-то даёт: Склад — вместимость, Академия — быстрее энергия, Казна — доход. Нажми на постройку — житель расскажет новости, а потом откроется окно улучшения.' },
@@ -992,14 +994,16 @@
     { t: 'Всё, {готов|готова}!', x: 'Крути Колесо, строй замок, собирай карты. Если что — я рядом, на самой высокой башне. Кар-р!' }
   ];
   var TUT_X2 = [
-    { t: 'Кар-р! Новости', x: 'В замке перемены, и я обязан всё показать — у меня контракт. Четыре новинки, по одной за раз.' }
-  ].concat(TUT.filter(function (s) { return /Дневной сбор|Мини-игры|Набеги|Задания и сюжет/.test(s.t); })).concat([{ t: 'Это всё!', x: 'Иди крути, сражайся и не забывай мстить барону. Умеренно. Кар-р!' }]);
+    { t: 'Кар-р! Новости', x: 'В замке перемены, и я обязан всё показать — у меня контракт. Пять новинок, по одной за раз.' }
+  ].concat(TUT.filter(function (s) { return /Дневной сбор|Мини-игры|^Меч$|Набеги|Задания и сюжет/.test(s.t); })).concat([{ t: 'Это всё!', x: 'Иди крути, сражайся и не забывай мстить барону. Умеренно. Кар-р!' }]);
+  var TUT_X3 = [{ t: 'Кар-р! К оружию!', x: 'Короткая новость, обещаю. Барабаны теперь звенят сталью.' }]
+    .concat(TUT.filter(function (s) { return /^(Меч|Набеги)$/.test(s.t); })).concat([{ t: 'Вперёд!', x: 'Крути, лови мечи и навести барона. Вежливо, но с размаха. Кар-р!' }]);
   function startTutorial(from, list) {
     if (tutOpen) return; tutOpen = true; auto = false;
-    var TUT0 = TUT; if (list === 'x2') TUT = TUT_X2;
+    var TUT0 = TUT; if (list === 'x2') TUT = TUT_X2; if (list === 'x3') TUT = TUT_X3;
     var i = from || 0, el = document.createElement('div'); el.className = 'tut'; $('#app').appendChild(el);
     function done(skipped) {
-      tutOpen = false; state.tut.done = true; state.tut.x2 = true; state.tut.step = 0; TUT = TUT0; save(); if (el.parentNode) el.parentNode.removeChild(el);
+      tutOpen = false; state.tut.done = true; state.tut.x2 = true; state.tut.x3 = true; state.tut.step = 0; TUT = TUT0; save(); if (el.parentNode) el.parentNode.removeChild(el);
       if (screen !== 'slot') go('slot'); if (skipped) toast('Обучение можно пройти снова: Настройки → Обучение с вороном', 'img/guide/raven.webp');
       setTimeout(pumpScenes, 400);
     }
@@ -1229,7 +1233,7 @@
     }
     if (src === 'backup') toast('Основное сохранение повреждено — загружена резервная копия');
     if (state.time.rollback) toast('Часы устройства переведены назад — восстановление на паузе', IC.energy);
-    if (window.__skipIntro) { state.scenes.queue = []; state.hero.chosen = true; state.tut.done = true; state.tut.news = false; state.tut.x2 = true; }
+    if (window.__skipIntro) { state.scenes.queue = []; state.hero.chosen = true; state.tut.done = true; state.tut.news = false; state.tut.x2 = true; state.tut.x3 = true; }
     if (!state.hero.chosen) enqueue(function () { genderDialog(true); });   // v0.6: сначала — кто унаследовал замок
     pumpScenes();
     handleTickEvents(evs);

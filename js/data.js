@@ -6,7 +6,7 @@
 
   D.TITLE = 'Замок удачи';
   D.SAVE_VERSION = 4;
-  D.APP_VERSION = '0.6 (бета)';
+  D.APP_VERSION = '0.6.1 (бета)';
   D.CREDITS = { title: 'Замок удачи', author: 'GMevgen', maker: 'Grok', year: 2026 };
 
   /* ---------- Слот ---------- */
@@ -19,15 +19,17 @@
     { id: 'orb',     name: 'Сфера маны',      img: 'img/sym/5.webp' },
     { id: 'cards',   name: 'Карты',           img: 'img/sym/6.webp' },
     { id: 'chest',   name: 'Сундук',          img: 'img/sym/7.webp' },
-    { id: 'key',     name: 'Ключ',            img: 'img/sym/8.webp' }
+    { id: 'key',     name: 'Ключ',            img: 'img/sym/8.webp' },
+    { id: 'sword',   name: 'Меч',             img: 'img/sym/9.webp' }   // 0.6.1: атаки на соседей
   ];
-  /* Лента барабана: 32 позиции, одинаковая для всех трёх барабанов (барабаны независимы).
-     Состав: монета 8, мешок 4, корона 1, кристалл 3, свиток 4, сфера 3, карты 4, сундук 2, ключ 3 = 32 */
-  D.STRIP_COUNTS = { coin: 8, bag: 4, crown: 1, crystal: 3, scroll: 4, orb: 3, cards: 4, chest: 2, key: 3 };
+  /* Лента барабана: 36 позиций, одинаковая для всех трёх барабанов (барабаны независимы).
+     Состав: монета 8, мешок 4, корона 1, кристалл 3, свиток 4, сфера 3, карты 4, сундук 2, ключ 3, меч 4 = 36.
+     0.6.1: меч — 2 меча на линии = атака на соседа, 3 меча = две атаки (≈1 атака на 26 вращений, как в «Монеточке»). */
+  D.STRIP_COUNTS = { coin: 8, bag: 4, crown: 1, crystal: 3, scroll: 4, orb: 3, cards: 4, chest: 2, key: 3, sword: 4 };
   D.STRIP = (function () {
     // перемешанный вручную порядок, чтобы одинаковые символы не стояли подряд
-    var order = 'coin bag scroll coin cards crystal coin key orb coin bag chest scroll coin cards key ' +
-                'crown coin orb bag scroll crystal coin cards key coin orb bag scroll chest cards crystal';
+    var order = 'coin bag scroll coin cards sword crystal coin key orb coin bag chest sword scroll coin cards key ' +
+                'crown coin orb sword bag scroll crystal coin cards key coin orb sword bag scroll chest cards crystal';
     return order.split(' ').map(function (id) {
       for (var i = 0; i < D.SYMBOLS.length; i++) if (D.SYMBOLS[i].id === id) return i;
       throw new Error(id);
@@ -37,19 +39,21 @@
   /* Таблица выплат: награда за КОЛИЧЕСТВО одинаковых символов на линии (1, 2 или 3), на 1 единицу ставки.
      coins — в «базовых монетах» B (B растёт с уровнем), energy/xp/mana/keys — в штуках × ставка. */
   D.PAYTABLE = {
-    coin:    { coins: [0, 0.14, 0.65, 5.4] },
-    bag:     { coins: [0, 0.32, 1.84, 20] },
-    crown:   { coins: [0, 0.65, 5.4, 30] },           // 3 короны — ДЖЕКПОТ (гарантирован на 50–80-м вращении)
+    coin:    { coins: [0, 0.154, 0.714, 5.93] },       // 0.6.1: ×1,098 — компенсация 4 мечей на ленте (RTP ≈96,8% как раньше)
+    bag:     { coins: [0, 0.351, 2.02, 21.96] },
+    crown:   { coins: [0, 0.714, 5.93, 32.94] },           // 3 короны — ДЖЕКПОТ (гарантирован на 50–80-м вращении)
     crystal: { energy: [0, 0, 2, 10] },
     scroll:  { xp: [0, 2, 15, 60] },
     orb:     { mana: [0, 1, 5, 25] },
     cards:   { cards: [0, 0, 1, 3] },               // 1 символ: 15% шанс карты
     chest:   { chest: [-1, -1, 0, 2] },             // 2 = деревянный, 3 = золотой
-    key:     { keys: [0, 0, 1, 3] }
+    key:     { keys: [0, 0, 1, 3] },
+    sword:   { attack: [0, 0, 1, 2] }                // 0.6.1: 2 меча — атака, 3 меча — две атаки
   };
   D.BASE_XP_PER_BET = 3;
   /* v2: весь опыт из всех источников ×0,5 (применяется в одном месте — E.addXp) */
-  D.XP_MUL = 0.5;
+  /* 0.6.1: ещё ×0,5 — итоговый множитель 0,25 (уровень и накопленный опыт в сохранениях не меняются) */
+  D.XP_MUL = 0.25;
   /* v2: «жалость» джекпота — после каждого джекпота выбирается скрытая цель T ∈ [50, 80] (crypto RNG);
      если к T-му вращению джекпот не выпал сам, T-е вращение принудительно даёт три короны. */
   D.PITY = { min: 50, max: 80 };
@@ -222,7 +226,7 @@
     { id: 'c1', name: 'Серебряный сундук', seals: 40,  chest: 1, lvl: 2 },
     { id: 'e',  name: '10 энергии',        seals: 20,  energy: 10, lvl: 1 },
     { id: 'm',  name: '30 маны',           seals: 20,  mana: 30, lvl: 2 },
-    { id: 'k',  name: '2 ключа',           seals: 30,  keys: 2, lvl: 3 },
+    { id: 'k',  name: '2 ключа',           seals: 300, keys: 2, lvl: 3 },   // 0.6.1: было 30 печатей (×10)
     { id: 'c2', name: 'Золотой сундук',    seals: 100, chest: 2, lvl: 4 },
     { id: 'c3', name: 'Мифический сундук', seals: 250, chest: 3, lvl: 7 }
   ];

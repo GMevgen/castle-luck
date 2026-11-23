@@ -459,3 +459,46 @@ textarea,input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 .sgrid .c.mine{background:#d7c3f0;color:#5b2a9a}.sgrid .c.boom{background:#ff7a6a;color:#fff}
 .sgrid .n1{color:#2a6fb8!important}.sgrid .n2{color:#3a8a2a!important}.sgrid .n3{color:#c0392b!important}.sgrid .n4{color:#6a2aa0!important}
 .swb{padding:6px 12px 12px;max-width:420px;margin:0 auto;width:100%}
+/* ---- 0.6.1: атака мечом (выбор соседа и деревня) ---- */
+.mg-atk{background:linear-gradient(#f3e6c6,#dcc596);display:flex;flex-direction:column;overflow:auto}
+.mg-atk .mg-top{display:flex;align-items:center;gap:8px}
+.atk-sub{margin:6px 12px;color:#5b4632}
+.atk-list{display:flex;flex-direction:column;gap:8px;padding:0 10px 14px}
+.atk-card{display:flex;gap:10px;align-items:center;text-align:left;background:#fff8e6;border:2px solid #c9a46a;border-radius:16px;padding:8px;font:inherit;color:inherit;box-shadow:0 3px 0 #b48c52}
+.atk-card:active{transform:translateY(2px);box-shadow:0 1px 0 #b48c52}
+.atk-card>img{width:64px;height:64px;border-radius:14px;object-fit:cover;border:2px solid #e2c68e}
+.atk-tag{font-size:11px;background:#a8322a;color:#fff;border-radius:8px;padding:1px 6px}
+.atk-stats{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:13px;margin-top:2px}
+.atk-stats img{width:14px;vertical-align:-2px}
+.atk-stats .sh{color:#2a6aa8;font-weight:700}.atk-stats .nosh{color:#2f7a33;font-weight:700}
+.atk-hp{display:inline-flex;gap:3px;margin-top:3px}
+.atk-hp i{width:10px;height:10px;border-radius:50%;background:#c43a2c;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+.atk-hp i.h1{background:#e09a2a}.atk-hp i.h0{background:#8a7a66;opacity:.45}
+.atk-pt{width:42px;height:42px;border-radius:12px;object-fit:cover}
+.vil{position:relative;margin:4px 10px;flex:1 0 auto;min-height:340px;border-radius:20px;overflow:hidden;background:url(../img/iso/map.webp) center/240% no-repeat,#9cb26a;box-shadow:inset 0 0 40px rgba(60,40,10,.45)}
+.vb{position:absolute;width:44%;transform:translate(-50%,-50%);background:none;border:0;padding:0;font:inherit;color:#3d2a18}
+.vb img{width:100%;display:block;filter:drop-shadow(0 6px 6px rgba(0,0,0,.35));transition:filter .3s}
+.vb.h1 img{filter:drop-shadow(0 6px 6px rgba(0,0,0,.35)) sepia(.45) brightness(.82)}
+.vb.h0 img{opacity:.85}
+.vb .vn{display:block;font-size:11px;font-weight:700;background:rgba(255,248,230,.85);border-radius:8px;margin:-6px auto 0;width:max-content;padding:0 6px}
+.vb .atk-hp{position:absolute;top:2px;left:50%;transform:translateX(-50%)}
+.vb.shake{animation:vshake .45s}
+@keyframes vshake{20%{transform:translate(-54%,-50%) rotate(-3deg)}40%{transform:translate(-46%,-52%) rotate(3deg)}60%{transform:translate(-53%,-49%)}80%{transform:translate(-48%,-50%)}}
+.dome{position:absolute;inset:4% 3%;border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(160,220,255,.05),rgba(110,190,255,.28) 70%,rgba(200,240,255,.6));border:2px solid rgba(190,235,255,.85);pointer-events:none;z-index:3;animation:dome 2.4s ease-in-out infinite}
+@keyframes dome{50%{box-shadow:0 0 30px rgba(140,210,255,.7)}}
+.dome.break{animation:dbreak .7s forwards}
+@keyframes dbreak{30%{transform:scale(1.04);background-color:rgba(255,255,255,.5)}100%{transform:scale(1.25);opacity:0}}
+.atk-sword{position:absolute;width:120px;z-index:5;pointer-events:none;transform:translate(-30%,-140%) rotate(150deg);animation:swing .45s cubic-bezier(.5,0,.9,.6) forwards}
+@keyframes swing{0%{transform:translate(40%,-260%) rotate(110deg);opacity:0}30%{opacity:1}100%{transform:translate(-40%,-95%) rotate(200deg)}}
+.atk-sword.bounce{animation:sbounce .6s forwards}
+@keyframes sbounce{0%{transform:translate(-40%,-95%) rotate(200deg)}100%{transform:translate(60%,-220%) rotate(80deg);opacity:0}}
+.puff{position:absolute;width:26px;height:26px;border-radius:50%;background:radial-gradient(#efe2c8,#b8a284 70%,transparent 72%);z-index:4;pointer-events:none;animation:puff .8s ease-out forwards}
+@keyframes puff{to{transform:translate(var(--dx),var(--dy)) scale(2.2);opacity:0}}
+.atk-float{position:absolute;z-index:6;transform:translate(-50%,-120%);font-weight:900;font-size:22px;color:#ffd447;text-shadow:0 2px 0 #7a4a10,0 0 8px rgba(0,0,0,.4);pointer-events:none;animation:afl 1.1s ease-out forwards}
+@keyframes afl{to{transform:translate(-50%,-260%);opacity:0}}
+.atk-res{position:sticky;bottom:0;margin:8px 10px 12px;display:flex;gap:10px;background:#fff8e6;border:2px solid #c9a46a;border-radius:16px;padding:10px;box-shadow:0 -4px 18px rgba(60,40,10,.25);animation:pop .3s}
+.atk-res>img{width:56px;height:56px;border-radius:12px;object-fit:cover}
+.atk-res .rvq{margin:4px 0}
+.atk-stats span,.mg-atk .mg-top .small{white-space:nowrap}
+.mg-atk .mg-top .grow{min-width:0}
+.mg-atk .mg-top .small img,.atk-stats img{display:inline;width:14px;height:auto}

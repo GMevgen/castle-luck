@@ -13,3 +13,5 @@ v5.2 credits GMevgen for the idea and Grok for the code and art.
 Version 0.6 (beta).
 
 Version 0.6 (beta), phase 2.
+
+Version 0.6.1 (beta) adds sword attacks.
