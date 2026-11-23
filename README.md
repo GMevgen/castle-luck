@@ -11,3 +11,5 @@ v5.1 adds a credits screen, «Создатели», naming GMevgen.
 v5.2 credits GMevgen for the idea and Grok for the code and art.
 
 Version 0.6 (beta).
+
+Version 0.6 (beta), phase 2.

@@ -175,7 +175,7 @@
   /* ключи сверх связки не начисляются; уже имеющиеся сверх максимума не отнимаются */
   function addKeys(s, n, d) { n = Math.max(0, Math.round(n || 0)); var got = Math.max(0, Math.min(n, d.maxKeys - s.keys)); s.keys += got; return got; }
   E.addKeys = function (s, n) { return addKeys(s, n, E.derived(s)); };
-  function addEnergy(s, n) { s.energy = Math.min(9999, s.energy + Math.round(n)); return Math.round(n); }
+  function addEnergy(s, n) { s.energy = Math.min(D.ENERGY_HARD_CAP || 9999, s.energy + Math.round(n)); return Math.round(n); }
 
   /* ---------- тик реального времени ---------- */
   E.tick = function (s, now) {

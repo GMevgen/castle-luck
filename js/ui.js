@@ -239,7 +239,7 @@
     var ce = E.currentEvent(now());
     return '<div class="slot"><div class="bgimg" style="background-image:url(img/ui/castle_bg.webp)"></div>' +
       '<button class="evstrip" data-act="go" data-to="events"><img src="' + ce.ev.banner + '"><div class="grow" style="text-align:left"><b>' + ce.ev.name + '</b><div class="small muted">' + ce.ev.bonusText + '</div></div><span class="pill">' + timerSpan(ce.end) + '</span></button>' +
-      evBarHTML(ce) +
+      evBarHTML(ce) + (window.CLX ? CLX.slotBarHTML() : '') +
       '<div class="machine"><div class="title">✦ Колесо Судьбы ✦</div><div class="reels" id="reels">' +
       [0, 1, 2].map(function (i) { return '<div class="reel" id="reel' + i + '"><div class="strip" id="strip' + i + '">' + stripHTML() + '</div><div class="hl"></div></div>'; }).join('') +
       '<div class="payline"></div></div></div>' +
@@ -248,7 +248,7 @@
       '<div class="controls"><div class="betbox"><span class="small muted">Ставка</span><span class="val" id="betVal">×1</span><div class="arrows"><button data-act="bet" data-d="-1" aria-label="меньше">−</button><button data-act="bet" data-d="1" aria-label="больше">+</button></div></div>' +
       '<button class="spinbtn" id="spinBtn" data-act="spin">КРУТИТЬ<small id="spinCost"></small></button>' +
       '<div class="side"><button class="toggle" id="autoBtn" data-act="auto">АВТО</button><button class="toggle" id="turboBtn" data-act="turbo">ТУРБО</button></div></div>' +
-      '<div class="row"><button class="btn sec sm grow" data-act="spells">✨ Заклинания</button><button class="btn sec sm grow" data-act="paytable">📜 Выплаты</button></div>' +
+      '<div class="row"><button class="btn sec sm grow" data-act="spells">✨ Заклинания</button><button class="btn sec sm grow" data-act="paytable">📜 Выплаты</button></div>' + (window.CLX ? CLX.slotButtonsHTML() : '') +
       '<div class="chests" id="chests"></div></div>';
   }
   /* ---------- шкала предметов события (единственное место, где видны предметы) ---------- */
@@ -339,7 +339,7 @@
   function updateSlotUI() {
     if (screen !== 'slot' || !$('#spinBtn')) return;
     var free = (state.spells.active.calm || 0) > 0;
-    $('#betVal').textContent = '×' + state.bet;
+    $('#betVal').textContent = '×' + state.bet; if (window.CLX) CLX.updateSlot();
     $('#spinCost').textContent = free ? 'бесплатно (' + state.spells.active.calm + ')' : '−' + state.bet + ' ' + plural(state.bet, 'энергия', 'энергии', 'энергии');
     $('#spinBtn').classList.toggle('dis', !free && state.energy < state.bet);
     $('#spinBtn').classList.toggle('busy', spinning);
@@ -449,6 +449,7 @@
     // предметы события летят в шкалу; заполненные этапы — награда сразу
     if (onSlot && r.eventItems) flyItems(r, function () { updateEvBar(); stageRewards(r.eventStages); });
     else { updateEvBar(); stageRewards(r.eventStages); }
+    if (window.CLX) CLX.afterSpin(r, onSlot);
     if (r.cards.length) S.card();
     if (r.chest != null) toast(r.chestSlot >= 0 ? D.CHESTS[r.chest].name + ' получен!' : 'Нет места для сундука — он превращён в монеты', D.CHESTS[r.chest].img);
     if (r.levelUps) { auto = false; showLevelUps(r.levelUps); }
@@ -631,7 +632,7 @@
   }
   function buildingHTML(id) {
     var b = D.BLD_BY_ID[id], lvl = state.bld[id], c = E.canUpgrade(state, id), d = E.derived(state, now());
-    var h = '<img class="hero-img" src="' + b.img + '"><div class="muted small">' + (lvl ? 'Уровень ' + lvl + ' из ' + D.BLD_MAX : 'Не построено') + '</div>' +
+    var h = (window.CLX ? CLX.damageHTML(id) : '') + '<img class="hero-img" src="' + b.img + '"><div class="muted small">' + (lvl ? 'Уровень ' + lvl + ' из ' + D.BLD_MAX : 'Не построено') + '</div>' +
       '<p>' + b.desc + '</p><div class="card">' + buildingEffects(id) + '</div>';
     var planned = E.plannedLevel(state, id), busy = state.builds.filter(function (j) { return j.start != null; }).length;
     if (planned > lvl) h += '<div class="card" style="border-color:var(--sky)">🔨 В очереди стройки: до ' + planned + ' уровня' + state.builds.filter(function (j) { return j.id === id && j.start != null; }).map(function (j) { return ' · готово через ' + timerSpan(j.end); }).join('') + '</div>';
@@ -768,7 +769,7 @@
     return h + '</div>';
   }
   function storyPanel() {
-    var h = '';
+    var h = window.CLX ? CLX.chainPanelHTML() : '';
     if (state.story.finished) h += '<div class="card"><img src="img/story/10.webp" style="width:100%;border-radius:10px"><h3>Сказание завершено!</h3><p>Сердце Фортуны восстановлено. Колесо продолжает вращаться: собирайте коллекции, участвуйте в событиях и развивайте замок до максимума.</p></div>';
     else {
       var ch = E.chapter(state), done = E.chapterDone(state);
@@ -921,7 +922,7 @@
     if (sceneOpen || spinning || modalStack.length || queue.length || $('.viewer') || popBusy || tutOpen) return;
     if (!state.hero.chosen) return;
     if (state.tut.news) { state.tut.news = false; save(); toast('Новое в ' + D.APP_VERSION + ': обучение с вороном Карром и выбор героя/героини — в Настройках', 'img/guide/raven.webp'); }
-    var id = E.takeScene(state); if (!id) { if (!state.tut.done && state.scenes.seen.ch_1) startTutorial(); return; }
+    var id = E.takeScene(state); if (!id) { if (!state.tut.done && state.scenes.seen.ch_1) startTutorial(); else if (state.tut.done && !state.tut.x2 && state.level >= 2) startTutorial(0, 'x2'); return; }
     save();
     openScene(id, { onDone: function () {
       if (id === 'ch_1' && !state.tut.done) { setTimeout(startTutorial, 300); return; }
@@ -976,22 +977,29 @@
     { sel: '#top .res.mana', t: 'Мана', x: 'Волшебная сила для заклинаний из Башни архимага: удвоить монеты, приманить карты и прочие чудеса. Копится сама, а расходуется только по твоей команде.' },
     { sel: '#chests', t: 'Сундуки', x: 'Сюда падают сундуки с барабанов. Нажми на сундук, чтобы начать отпирание по таймеру, или открой его ключами прямо сейчас. Внутри монеты, энергия, а иногда и карты.' },
     { sel: '#evbar', t: 'Шкала события', x: 'Во время праздников с барабанов падают особые предметы. Они наполняют шкалу над Колесом, а за каждый этап — подарок. Каждый праздник — свой предмет.' },
+    { sel: '#dbar', t: 'Дневной сбор', x: 'А это — сбор дня. Каждый день духи долины прячут в барабанах свой предмет — банки светлячков, жёлуди, перья, фонарики… Какой сегодня — видно на значке слева. Собирай — на 100 штук дадут 100 энергии, на 1 000 — тысячу, и так до 50 000! В полночь всё начинается заново, с новым предметом.' },
+    { sel: '[data-act="miniMenu"]', t: 'Мини-игры', x: 'Когда надоест крутить — сюда. «Поиск» (5 попыток в день, энергия и шанс на ультраредкую карту), «Бегущий ворон» — это я, между прочим, лечу по трём дорожкам за монетками-мини, и «Магический сапёр» 9×9. Монетки-мини тратятся в мини-лавке.' },
+    { sel: '[data-act="raids"]', t: 'Набеги', x: 'Соседи-бароны не дремлют. Заряды набега ⚔ копятся от вращений — трать их на набеги и уноси монеты. Но соседи бьют в ответ! Щиты 🛡 спасают, журнал помнит каждого обидчика, а кнопка «Отомстить» — лучшее лекарство от обиды.' },
     { sel: '#tLvl', t: 'Уровень', x: 'Кольцо вокруг цифры — опыт до следующего уровня. Новый уровень открывает ставки, постройки и коллекции. Нажми — увидишь свою летопись.' },
     { sel: '#nav [data-to="castle"]', t: 'Замок', x: 'А теперь — самое красивое. Здесь твой замок. Пойдём посмотрим!' },
     { screen: 'castle', sel: '#isoHost', t: 'Постройки', x: 'Карту двигают пальцем и приближают щипком. Каждая постройка что-то даёт: Склад — вместимость, Академия — быстрее энергия, Казна — доход. Нажми на постройку — житель расскажет новости, а потом откроется окно улучшения.' },
     { screen: 'castle', sel: '#isoHud [data-act="bldList"]', t: 'Улучшения', x: 'Здесь список всех построек. Стрелка ▲ значит «можно улучшить». Улучшение стоит монет и строится по настоящему времени — даже когда игра закрыта.' },
     { screen: 'castle', sel: '#isoHud [data-act="bqueue"]', t: 'Стройка', x: 'Очередь стройки. Строители работают по одному заказу каждый; Цитадель добавляет строителей и ускоряет работу. Хочешь быстрее — улучшай Цитадель.' },
     { screen: 'slot', sel: '#nav [data-to="cards"]', t: 'Карты и коллекции', x: 'Карты — осколки Сердца Фортуны. Собери коллекцию целиком — получишь вечный бонус. Карты падают нечасто, так что каждая — праздник. Дубликаты меняй на печати у гнома Бруни.' },
-    { sel: '#nav [data-to="quests"]', t: 'Задания и сюжет', x: 'Главы истории, ежедневные задания и достижения. За каждое — награды, а сюжет… ну, {сам|сама} увидишь. Спойлеров от меня не жди: я ворон приличный.' },
+    { sel: '#nav [data-to="quests"]', t: 'Задания и сюжет', x: 'Главы истории, ежедневные задания и достижения. У каждой главы есть цепочка заданий из трёх частей — с диалогами, перебивками и спорами о пирогах. Выполнил часть — открывается следующая. Спойлеров от меня не жди: я ворон приличный.' },
     { sel: '#nav [data-to="events"]', t: 'События', x: 'Праздники в долине сменяют друг друга. У каждого — своя коллекция, свой предмет для шкалы и свои бонусы. Загляни сюда, когда захочешь узнать, что сейчас празднуют.' },
     { sel: '#top .gear', t: 'Настройки', x: 'Звук, турбо, анимация карты, катсцены у построек, выбор героя или героини — и это обучение, если захочешь повторить. Я не обижусь. Почти.' },
     { t: 'Всё, {готов|готова}!', x: 'Крути Колесо, строй замок, собирай карты. Если что — я рядом, на самой высокой башне. Кар-р!' }
   ];
-  function startTutorial(from) {
+  var TUT_X2 = [
+    { t: 'Кар-р! Новости', x: 'В замке перемены, и я обязан всё показать — у меня контракт. Четыре новинки, по одной за раз.' }
+  ].concat(TUT.filter(function (s) { return /Дневной сбор|Мини-игры|Набеги|Задания и сюжет/.test(s.t); })).concat([{ t: 'Это всё!', x: 'Иди крути, сражайся и не забывай мстить барону. Умеренно. Кар-р!' }]);
+  function startTutorial(from, list) {
     if (tutOpen) return; tutOpen = true; auto = false;
+    var TUT0 = TUT; if (list === 'x2') TUT = TUT_X2;
     var i = from || 0, el = document.createElement('div'); el.className = 'tut'; $('#app').appendChild(el);
     function done(skipped) {
-      tutOpen = false; state.tut.done = true; state.tut.step = 0; save(); if (el.parentNode) el.parentNode.removeChild(el);
+      tutOpen = false; state.tut.done = true; state.tut.x2 = true; state.tut.step = 0; TUT = TUT0; save(); if (el.parentNode) el.parentNode.removeChild(el);
       if (screen !== 'slot') go('slot'); if (skipped) toast('Обучение можно пройти снова: Настройки → Обучение с вороном', 'img/guide/raven.webp');
       setTimeout(pumpScenes, 400);
     }
@@ -1190,6 +1198,7 @@
       if (ev.type === 'research') { toast('Изучено: ' + D.SKILL_BY_ID[ev.id].name + ' ' + ev.lvl, D.SKILL_BY_ID[ev.id].img); S.level(); }
       if (ev.type === 'build') { var b = D.BLD_BY_ID[ev.id]; toast(b.name + ': ' + (ev.lvl === 1 ? 'построено!' : 'уровень ' + ev.lvl + '!') + ' +' + fmtXp(ev.xp) + ' опыта', b.img); S.build(); if (ev.levelUps) showLevelUps(ev.levelUps); }
       if (ev.type === 'login') loginDialog();
+      if (window.CLX) CLX.onTickEvent(ev);
       if (ev.type === 'event') { buildNav(); if (screen === 'slot') renderScreen(); }
     });
   }
@@ -1220,7 +1229,7 @@
     }
     if (src === 'backup') toast('Основное сохранение повреждено — загружена резервная копия');
     if (state.time.rollback) toast('Часы устройства переведены назад — восстановление на паузе', IC.energy);
-    if (window.__skipIntro) { state.scenes.queue = []; state.hero.chosen = true; state.tut.done = true; state.tut.news = false; }
+    if (window.__skipIntro) { state.scenes.queue = []; state.hero.chosen = true; state.tut.done = true; state.tut.news = false; state.tut.x2 = true; }
     if (!state.hero.chosen) enqueue(function () { genderDialog(true); });   // v0.6: сначала — кто унаследовал замок
     pumpScenes();
     handleTickEvents(evs);
@@ -1232,6 +1241,15 @@
     window.__ready = true;
   }
 
+  /* ---------- v0.6: помощники для ui-extra.js (мини-игры, набеги, дневной сбор, цепочки) ---------- */
+  window.CLUI = {
+    get state() { return state; }, get screen() { return screen; }, rng: rng, now: now, ACT: ACT, IC: IC, S: S,
+    dialog: dialog, openSheet: openSheet, refreshSheet: refreshSheet, closeModal: closeModal, closeAll: function () { closeAllModals(); },
+    toast: toast, save: save, saveNow: saveNow, refreshAll: function () { refreshAll(); }, updateTop: function () { updateTop(); }, go: function (t) { go(t); },
+    fmt: fmt, fmtK: fmtK, fmtTime: fmtTime, esc: esc, plural: plural, pill: pill, bar: bar, showReward: showReward, cardPop: cardPop,
+    openScene: function (id, o) { openScene(id, o); }, pumpScenes: function () { pumpScenes(); }, startTutorial: function (i, list) { startTutorial(i, list); },
+    setAuto: function (v) { auto = !!v; }, modalCount: function () { return modalStack.length; }
+  };
   /* ---------- хуки для автотестов ---------- */
   window.CLGame = {
     get state() { return state; }, E: E, D: D, ACT: ACT,

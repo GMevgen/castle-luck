@@ -1,7 +1,7 @@
 /* Service Worker «Замок удачи»: кэширует ВСЕ файлы игры при первой загрузке → полная игра офлайн.
    Версия кэша = хэш содержимого; новая версия ставится в фоне и ждёт, пока игрок нажмёт «Обновить». */
 'use strict';
-var VERSION = '301587d477b2';
+var VERSION = 'a9f99c6aa2ed';
 var CACHE = 'castle-luck-' + VERSION;
 var ASSETS = [
 "./",
@@ -190,6 +190,14 @@ var ASSETS = [
 "img/chest/1.webp",
 "img/chest/2.webp",
 "img/chest/3.webp",
+"img/daily/0.webp",
+"img/daily/1.webp",
+"img/daily/2.webp",
+"img/daily/3.webp",
+"img/daily/4.webp",
+"img/daily/5.webp",
+"img/daily/6.webp",
+"img/daily/7.webp",
 "img/ev/harvest.webp",
 "img/ev/item0.webp",
 "img/ev/item1.webp",
@@ -256,6 +264,10 @@ var ASSETS = [
 "img/port/8.webp",
 "img/port/9.webp",
 "img/port/hero_f.webp",
+"img/rival/0.webp",
+"img/rival/1.webp",
+"img/rival/2.webp",
+"img/rival/3.webp",
 "img/skill/0.webp",
 "img/skill/1.webp",
 "img/skill/2.webp",
@@ -300,11 +312,14 @@ var ASSETS = [
 "js/audio.js",
 "js/data.js",
 "js/engine.js",
+"js/extra.js",
 "js/iso-fx.js",
 "js/iso.js",
 "js/isomask.js",
 "js/platform.js",
 "js/rng.js",
+"js/story2.js",
+"js/ui-extra.js",
 "js/ui.js",
 "manifest.webmanifest"
 ];
