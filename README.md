@@ -9,3 +9,5 @@ v5.0 replaces the map art with hand-painted anime-style scenes and removes the d
 v5.1 adds a credits screen, «Создатели», naming GMevgen.
 
 v5.2 credits GMevgen for the idea and Grok for the code and art.
+
+Version 0.6 (beta).

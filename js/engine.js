@@ -39,6 +39,8 @@
       story: { ch: 1, base: {}, seen: 0, finished: false },
       ach: {}, event: { inst: -1, items: 0, stage: 0 },
       bet: 1, settings: { sound: true, turbo: false },
+      hero: { g: 'm', chosen: false },        // v0.6: пол героя (выбирается при первом запуске)
+      tut: { done: false, step: 0, news: false },   // v0.6: обучение с вороном
       pity: { since: 0, target: null },       // скрытый счётчик джекпота (в интерфейсе не показывается)
       builds: [],                             // очередь строительства
       scenes: { seen: {}, queue: ['ch_1'], active: null }
@@ -81,6 +83,13 @@
       if (o.bld && o.bld.citadel >= 6) seen.builder3 = 1;
       o.scenes = { seen: seen, queue: [], active: null };
       o.v = 3; return o;
+    },
+    /* v3 → v4 (игра 0.6 бета): пол героя и обучение. Старые игроки — герой, обучение считается пройденным
+       (его можно включить в настройках), один раз покажется подсказка о новинках. Прогресс не трогается. */
+    3: function (o) {
+      o.hero = { g: 'm', chosen: true };
+      o.tut = { done: true, step: 0, news: true };
+      o.v = 4; return o;
     }
   };
   E.migrate = function (raw, now) {
@@ -132,6 +141,7 @@
     d.builders = D.builders(b.citadel);
     d.buildMul = Math.max(0.6, 1 - 0.04 * (b.citadel - 1));   // Цитадель ускоряет стройку
     d.maxMana = 60 + 20 * b.tower;
+    d.maxKeys = 30 + 10 * (Math.max(1, b.warehouse) - 1);   // v0.6: связка ключей (растёт со Складом)
     d.manaRegenMs = 360000 * Math.pow(0.95, b.academy - 1);
     d.coinMul = (1 + 0.03 * (b.citadel - 1)) * (1 + D.SKILL_BY_ID.coin.per * sk.coin + cb.coins) * (1 + (ev.coins || 0));
     d.xpMul = (1 + D.SKILL_BY_ID.wisdom.per * sk.wisdom + cb.xp) * (1 + (ev.xp || 0));
@@ -162,6 +172,9 @@
     return got;
   }
   function addMana(s, n, d) { var before = s.mana; s.mana = Math.min(d.maxMana, s.mana + Math.round(n)); return s.mana - before; }
+  /* ключи сверх связки не начисляются; уже имеющиеся сверх максимума не отнимаются */
+  function addKeys(s, n, d) { n = Math.max(0, Math.round(n || 0)); var got = Math.max(0, Math.min(n, d.maxKeys - s.keys)); s.keys += got; return got; }
+  E.addKeys = function (s, n) { return addKeys(s, n, E.derived(s)); };
   function addEnergy(s, n) { s.energy = Math.min(9999, s.energy + Math.round(n)); return Math.round(n); }
 
   /* ---------- тик реального времени ---------- */
@@ -251,6 +264,8 @@
     var card = rng.pick(pool);
     return E.giveCard(s, card.id, t);
   };
+  /* v0.6: «вдвое реже» — каждая карта с символов остаётся с шансом D.CARD_DROP_MUL */
+  E.dropCards = function (n, rng, min) { var k = 0; for (var i = 0; i < n; i++) if (rng.chance(D.CARD_DROP_MUL)) k++; return Math.max(min || 0, k); };
   E.giveCard = function (s, id, now) {
     var isNew = !s.cards[id];
     s.cards[id] = (s.cards[id] || 0) + 1; s.stats.cardsGot++;
@@ -312,7 +327,7 @@
     out.coins = addCoins(s, d.B * rng.range(ch.coins[0], ch.coins[1]) * d.coinMul, d, out);
     out.energy = addEnergy(s, rng.range(ch.energy[0], ch.energy[1]));
     out.mana = addMana(s, rng.range(ch.mana[0], ch.mana[1]) * d.manaMul, d);
-    out.keys = rng.range(ch.keyR[0], ch.keyR[1]); s.keys += out.keys;
+    out.keys = addKeys(s, rng.range(ch.keyR[0], ch.keyR[1]), d);
     out.seals = ch.seals; s.seals += ch.seals;
     for (var k = 0; k < ch.cards; k++) {
       // первая карта — не ниже гарантированной редкости (для мифического: легендарная с шансом 35%, иначе эпическая)
@@ -328,7 +343,7 @@
     if (rw.coinsB) res.coins = addCoins(s, d.B * rw.coinsB, d, res);
     if (rw.energy) res.energy = addEnergy(s, rw.energy);
     if (rw.mana) res.mana = addMana(s, rw.mana, d);
-    if (rw.keys) { s.keys += rw.keys; res.keys = rw.keys; }
+    if (rw.keys) res.keys = addKeys(s, rw.keys, d);
     if (rw.seals) { s.seals += rw.seals; res.seals = rw.seals; }
     if (rw.chest != null) { res.chest = rw.chest; addChest(s, rw.chest, d, res); }
     if (rw.cards && rng) for (var i = 0; i < rw.cards; i++) res.cards.push(E.rollCard(s, rng, 'C', 0, now));
@@ -400,10 +415,11 @@
     // энергия/мана/ключи
     out.energy = line.energy ? addEnergy(s, line.energy) : 0;
     out.mana = line.mana ? addMana(s, line.mana * d.manaMul, d) : 0;
-    out.keys = line.keys + (d.keyChance > 0 && rng.chance(d.keyChance) ? 1 : 0); s.keys += out.keys;
+    out.keys = addKeys(s, line.keys + (d.keyChance > 0 && rng.chance(d.keyChance) ? 1 : 0), d);
     // карты
     var nCards = line.cards, extraRare = (act.seer || 0) > 0 ? 0.1 : 0;
-    if (nCards === 0 && rng.chance(line.cardChance * d.cardChanceMul)) nCards = 1;
+    if (nCards > 0) nCards = E.dropCards(nCards, rng, line.triple === 'cards' ? 1 : 0);   // v0.6: ×0,5
+    else if (rng.chance(line.cardChance * d.cardChanceMul)) nCards = 1;
     if ((act.collect || 0) > 0) { act.collect--; if (nCards === 0) nCards = 1; }
     if ((act.seer || 0) > 0) act.seer--;
     for (var k = 0; k < nCards; k++) out.cards.push(E.rollCard(s, rng, line.triple === 'cards' && k === 0 ? 'R' : 'C', extraRare, t));
@@ -433,7 +449,7 @@
     for (var a = 0; a < N; a++) for (var b = 0; b < N; b++) for (var c = 0; c < N; c++) {
       var r = E.evalLine([D.STRIP[a], D.STRIP[b], D.STRIP[c]], 1);
       acc.coinsB += r.coinsB; acc.energy += r.energy; acc.xp += r.xp; acc.mana += r.mana; acc.keys += r.keys;
-      acc.cards += r.cards + (r.cards === 0 ? r.cardChance : 0);
+      acc.cards += r.cards * D.CARD_DROP_MUL + (r.triple === 'cards' ? Math.pow(1 - D.CARD_DROP_MUL, r.cards) : 0) + (r.cards === 0 ? r.cardChance : 0);
       if (r.triple) acc.triples++; if (r.jackpot) acc.jackpot++;
       if (r.chest === 0) acc.chest0++; if (r.chest === 2) acc.chest2++;
       if (r.coinsB > 0) acc.anyWin++;
@@ -615,13 +631,14 @@
     var it = D.MARKET.filter(function (m) { return m.id === itemId; })[0];
     if (!it) return { ok: false };
     if (s.bld.market < it.lvl) return { ok: false, reason: 'Нужен Рынок ' + it.lvl + ' ур.' };
+    if (it.keys && !it.chest && !it.energy && !it.mana && s.keys >= E.derived(s).maxKeys) return { ok: false, reason: 'Связка ключей полна — улучшите Склад' };
     var p = E.marketPrice(s, it); if (s.seals < p) return { ok: false, reason: 'Не хватает печатей' };
     s.seals -= p; var d = E.derived(s);
     var out = { ok: true, price: p };
     if (it.chest != null) out.slot = addChest(s, it.chest, d, out);
     if (it.energy) addEnergy(s, it.energy);
     if (it.mana) addMana(s, it.mana, d);
-    if (it.keys) s.keys += it.keys;
+    if (it.keys) out.keys = addKeys(s, it.keys, d);
     return out;
   };
   E.cardPrice = function (s, id) { return Math.ceil(D.RARITY[D.CARD_BY_ID[id].r].price * E.derived(s).priceMul); };

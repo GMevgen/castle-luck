@@ -5,8 +5,8 @@
   var D = CL.Data = {};
 
   D.TITLE = 'Замок удачи';
-  D.SAVE_VERSION = 3;
-  D.APP_VERSION = '5.2';
+  D.SAVE_VERSION = 4;
+  D.APP_VERSION = '0.6 (бета)';
   D.CREDITS = { title: 'Замок удачи', author: 'GMevgen', maker: 'Grok', year: 2026 };
 
   /* ---------- Слот ---------- */
@@ -53,8 +53,14 @@
   /* v2: «жалость» джекпота — после каждого джекпота выбирается скрытая цель T ∈ [50, 80] (crypto RNG);
      если к T-му вращению джекпот не выпал сам, T-е вращение принудительно даёт три короны. */
   D.PITY = { min: 50, max: 80 };
-  D.CARD_CHANCE_BASE = 0.03;
-  D.CARD_CHANCE_ONE_SYMBOL = 0.15;
+  /* v0.6: все выпадения карт ≈ вдвое реже.
+     Было (v0.5): база 3%, 1 символ карт +15%, 2 символа — 1 карта, 3 — 3 карты (≈0,119 карты/вращение);
+     сундуки 2/4/6/10 карт; шкала события 8 карт события за 10 этапов.
+     Стало: база 1,5%, 1 символ +7,5%, символьные карты — каждая с шансом 50% (3 в ряд — не меньше 1)
+     (≈0,059 карты/вращение); сундуки 1/2/3/5; шкала события 4 карты. */
+  D.CARD_DROP_MUL = 0.5;
+  D.CARD_CHANCE_BASE = 0.015;
+  D.CARD_CHANCE_ONE_SYMBOL = 0.075;
   D.BETS = [ { x: 1, lvl: 1 }, { x: 2, lvl: 3 }, { x: 3, lvl: 6 }, { x: 5, lvl: 10 }, { x: 10, lvl: 15 }, { x: 20, lvl: 22 } ];
 
   /* ---------- Прогрессия ---------- */
@@ -204,10 +210,10 @@
 
   /* ---------- Сундуки ---------- */
   D.CHESTS = [
-    { name: 'Деревянный сундук', img: 'img/chest/0.webp', min: 15,  keys: 1,  coins: [15, 30],   cards: 2,  minR: 'C', energy: [0, 5],   mana: [0, 0],   keyR: [0, 0], seals: 0 },
-    { name: 'Серебряный сундук', img: 'img/chest/1.webp', min: 60,  keys: 3,  coins: [40, 80],   cards: 4,  minR: 'R', energy: [5, 10],  mana: [10, 20], keyR: [0, 0], seals: 5 },
-    { name: 'Золотой сундук',    img: 'img/chest/2.webp', min: 180, keys: 6,  coins: [120, 200], cards: 6,  minR: 'E', energy: [15, 25], mana: [30, 40], keyR: [1, 1], seals: 15 },
-    { name: 'Мифический сундук', img: 'img/chest/3.webp', min: 480, keys: 12, coins: [350, 500], cards: 10, minR: 'L', energy: [30, 45], mana: [60, 80], keyR: [2, 3], seals: 40 }
+    { name: 'Деревянный сундук', img: 'img/chest/0.webp', min: 15,  keys: 1,  coins: [15, 30],   cards: 1,  minR: 'C', energy: [0, 5],   mana: [0, 0],   keyR: [0, 0], seals: 0 },
+    { name: 'Серебряный сундук', img: 'img/chest/1.webp', min: 60,  keys: 3,  coins: [40, 80],   cards: 2,  minR: 'R', energy: [5, 10],  mana: [10, 20], keyR: [0, 0], seals: 5 },
+    { name: 'Золотой сундук',    img: 'img/chest/2.webp', min: 180, keys: 6,  coins: [120, 200], cards: 3,  minR: 'E', energy: [15, 25], mana: [30, 40], keyR: [1, 1], seals: 15 },
+    { name: 'Мифический сундук', img: 'img/chest/3.webp', min: 480, keys: 12, coins: [350, 500], cards: 5,  minR: 'L', energy: [30, 45], mana: [60, 80], keyR: [2, 3], seals: 40 }
   ];
 
   /* ---------- Рынок ---------- */
@@ -248,11 +254,11 @@
     { need: 20, reward: { energy: 10, eventCards: 1 } },
     { need: 25, reward: { energy: 12, mana: 20 } },
     { need: 30, reward: { energy: 15, chest: 0 } },
-    { need: 40, reward: { energy: 18, eventCards: 2 } },
+    { need: 40, reward: { energy: 18, eventCards: 1 } },
     { need: 50, reward: { energy: 20, keys: 2 } },
     { need: 60, reward: { energy: 25, chest: 1 } },
-    { need: 75, reward: { energy: 30, eventCards: 3 } },
-    { need: 90, reward: { energy: 50, chest: 2, eventCards: 2 } }
+    { need: 75, reward: { energy: 30, eventCards: 1 } },
+    { need: 90, reward: { energy: 50, chest: 2, eventCards: 1 } }
   ];
   D.EVENT_BAR_LOOP = { need: 100, reward: { energy: 20, coinsB: 30 } };
 
@@ -307,7 +313,7 @@
 
   /* ---------- Персонажи и сюжет ---------- */
   D.CHARS = {
-    hero:   { name: 'Ален',            img: 'img/port/0.webp' },
+    hero:   { name: 'Ален',            img: 'img/port/0.webp' },   // меняется D.setHero по выбранному полу
     orvin:  { name: 'Мастер Орвин',    img: 'img/port/1.webp' },
     morven: { name: 'Морвен Тёмный',   img: 'img/port/2.webp' },
     elina:  { name: 'Элина',           img: 'img/port/3.webp' },
@@ -320,6 +326,22 @@
     liora:  { name: 'Лиора',           img: 'img/port/10.webp' },
     tobias: { name: 'Брат Тобиас',     img: 'img/port/11.webp' },
     torm:   { name: 'Кузнец Торм',     img: 'img/port/12.webp' }
+  };
+  /* v0.6: пол героя. Тексты пишутся в мужском роде; для героини — точечные замены и метки {м|ж}. */
+  D.HEROES = { m: { name: 'Ален', img: 'img/port/0.webp', label: 'Герой' }, f: { name: 'Алина', img: 'img/port/hero_f.webp', label: 'Героиня' } };
+  D.GENDER = 'm';
+  D.setHero = function (g) { D.GENDER = g === 'f' ? 'f' : 'm'; var h = D.HEROES[D.GENDER]; D.CHARS.hero.name = h.name; D.CHARS.hero.img = h.img; };
+  D.FEM = [
+    [/([Мм])илорд/g, '$1иледи'], ['настоящим лордом', 'настоящей леди'], ['Не реви, лорд', 'Не реви, леди'], ['Работящий лорд', 'Работящая леди'],
+    ['Лорд Вальдмора', 'Леди Вальдмора'], ['Глупый мальчишка', 'Глупая девчонка'], [/юноша/g, 'девушка'], [/Юноша/g, 'Девушка'],
+    [/([Вв])нук(?![а-яё])/g, '$1нучка'], ['ты уже трогал.', 'ты уже трогала.'], ['Ты сделал это', 'Ты сделала это'], ['я нашёл', 'я нашла'],
+    ['ты собрал их', 'ты собрала их'], ['Ты превзошёл', 'Ты превзошла']
+  ];
+  D.g = function (t, g) {
+    if (t == null) return t; g = g || D.GENDER; t = String(t);
+    t = t.replace(/\{([^{}|]*)\|([^{}|]*)\}/g, function (m, a, b) { return g === 'f' ? b : a; });
+    if (g === 'f') D.FEM.forEach(function (r) { t = typeof r[0] === 'string' ? t.split(r[0]).join(r[1]) : t.replace(r[0], r[1]); });
+    return t;
   };
   /* objectives: type abs — абсолютное значение; rel — прирост счётчика с начала главы */
   D.CHAPTERS = [

@@ -1,7 +1,7 @@
 /* Service Worker «Замок удачи»: кэширует ВСЕ файлы игры при первой загрузке → полная игра офлайн.
    Версия кэша = хэш содержимого; новая версия ставится в фоне и ждёт, пока игрок нажмёт «Обновить». */
 'use strict';
-var VERSION = '0054e7184f81';
+var VERSION = '301587d477b2';
 var CACHE = 'castle-luck-' + VERSION;
 var ASSETS = [
 "./",
@@ -198,6 +198,7 @@ var ASSETS = [
 "img/ev/spring.webp",
 "img/ev/summer.webp",
 "img/ev/winter.webp",
+"img/guide/raven.webp",
 "img/iso/academy_1.webp",
 "img/iso/academy_2.webp",
 "img/iso/academy_3.webp",
@@ -254,6 +255,7 @@ var ASSETS = [
 "img/port/7.webp",
 "img/port/8.webp",
 "img/port/9.webp",
+"img/port/hero_f.webp",
 "img/skill/0.webp",
 "img/skill/1.webp",
 "img/skill/2.webp",

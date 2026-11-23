@@ -21,6 +21,14 @@
     if (a < 1e9) return (n / 1e6).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' млн';
     return (n / 1e9).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' млрд';
   }
+  /* v0.6: компактные числа для верхней панели: 9 999 · 12.5K · 125K · 1.2M · 3.4B */
+  function fmtK(n) {
+    n = Math.round(n || 0); var a = Math.abs(n), u = '', v = n;
+    if (a < 10000) return grp(n);
+    if (a < 1e6) { v = n / 1e3; u = 'K'; } else if (a < 1e9) { v = n / 1e6; u = 'M'; } else { v = n / 1e9; u = 'B'; }
+    var av = Math.abs(v), s = av < 100 ? (Math.floor(av * 10) / 10).toFixed(1).replace(/\.0$/, '') : String(Math.floor(av));
+    return (v < 0 ? '-' : '') + s + u;
+  }
   function fmtTime(ms) {
     var s = Math.max(0, Math.ceil(ms / 1000)), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
     if (d) return d + 'д ' + h + 'ч'; if (h) return h + 'ч ' + (m < 10 ? '0' : '') + m + 'м';
@@ -79,7 +87,7 @@
     if (m.onClose) m.onClose();
     setTimeout(function () { if (typeof pumpScenes === 'function') pumpScenes(); }, 350);
   }
-  function modalOpen() { return modalStack.length > 0 || !!$('.story') || !!$('.viewer'); }
+  function modalOpen() { return tutOpen || modalStack.length > 0 || !!$('.story') || !!$('.viewer'); }
   function openSheet(title, renderFn) {
     var m = openOverlay('<div class="sheet"><div class="grab"><h2 style="margin:0">' + title + '</h2><button class="close" data-act="close">✕</button></div><div class="content"></div></div>');
     sheetCtx = { m: m, render: renderFn };
@@ -160,23 +168,37 @@
   function buildTop() {
     $('#top').innerHTML =
       '<button class="lvl" data-act="profile" id="tLvl"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none" stroke="rgba(0,0,0,.5)" stroke-width="4"/><circle id="tRing" cx="26" cy="26" r="24" fill="none" stroke="#7cc4ff" stroke-width="4" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="150.8"/></svg><span id="tLv">1</span></button>' +
-      '<div class="res"><img src="' + IC.coin + '"><div><div class="v" id="tCoins">0</div><span class="sub" id="tCoinsMax"></span></div></div>' +
-      '<div class="res"><img src="' + IC.energy + '"><div><div class="v" id="tEnergy">0</div><span class="sub timer" id="tEnergyT"></span></div></div>' +
-      '<div class="res"><img src="' + IC.mana + '"><div><div class="v" id="tMana">0</div><span class="sub" id="tManaMax"></span></div></div>' +
-      '<div class="res keys"><img src="' + IC.key + '"><div class="v" id="tKeys">0</div></div>' +
+      resChip('coins', IC.coin, 'tCoins', 'tCoinsMax') + resChip('energy', IC.energy, 'tEnergy', 'tEnergyMax') +
+      resChip('mana', IC.mana, 'tMana', 'tManaMax') + resChip('keys', IC.key, 'tKeys', 'tKeysMax') +
       '<button class="gear" data-act="settings" aria-label="Настройки">⚙</button>';
+  }
+  function resChip(k, ic, id, idMax) {
+    return '<button class="res ' + k + '" data-act="resInfo" data-r="' + k + '" aria-label="' + RES_NAME[k] + '"><span class="ri"' + (k === 'energy' ? ' id="tERing"' : '') + '><img src="' + ic + '" alt=""></span>' +
+      '<span class="tx"><b class="v" id="' + id + '">0</b><span class="mx" id="' + idMax + '"></span></span></button>';
+  }
+  var RES_NAME = { coins: 'Монеты', energy: 'Энергия', mana: 'Мана', keys: 'Ключи' };
+  function resInfo(k) {
+    var d = E.derived(state, now()), t;
+    if (k === 'coins') t = 'Монеты: ' + grp(state.coins) + ' из ' + grp(d.maxCoins) + '. Вместимость растёт со Складом.';
+    else if (k === 'energy') t = 'Энергия: ' + state.energy + ' из ' + d.maxEnergy + (state.energy >= d.maxEnergy ? '. Полная!' : '. +1 через ' + fmtTime(state.energyT + d.regenMs - Math.max(now(), state.time.high)));
+    else if (k === 'mana') t = 'Мана: ' + state.mana + ' из ' + d.maxMana + '. Для заклинаний Башни архимага.';
+    else t = 'Ключи: ' + state.keys + ' из ' + d.maxKeys + '. Открывают сундуки сразу. Связку расширяет Склад.';
+    toast(t, IC[k === 'coins' ? 'coin' : k === 'keys' ? 'key' : k]);
   }
   function updateTop() {
     var d = E.derived(state, now()), need = D.xpNeed(state.level);
     $('#tLv').textContent = state.level;
     $('#tRing').setAttribute('stroke-dashoffset', (150.8 * (1 - Math.min(1, state.xp / need))).toFixed(1));
-    $('#tCoins').textContent = fmt(state.coins - coinOffset);
-    $('#tCoinsMax').textContent = '/ ' + fmt(d.maxCoins);
-    $('#tEnergy').textContent = state.energy;
-    $('#tEnergyT').textContent = '/' + d.maxEnergy + (state.energy >= d.maxEnergy ? '' : ' · ' + fmtTime(state.energyT + d.regenMs - Math.max(now(), state.time.high)));
-    $('#tMana').textContent = state.mana;
-    $('#tManaMax').textContent = '/ ' + d.maxMana;
-    $('#tKeys').textContent = state.keys;
+    $('#tCoins').textContent = fmtK(state.coins - coinOffset);
+    $('#tCoinsMax').textContent = '/' + fmtK(d.maxCoins);
+    $('#tEnergy').textContent = fmtK(state.energy);
+    $('#tEnergyMax').textContent = '/' + fmtK(d.maxEnergy);
+    var ep = state.energy >= d.maxEnergy ? 100 : 100 * (1 - Math.max(0, state.energyT + d.regenMs - Math.max(now(), state.time.high)) / d.regenMs);
+    $('#tERing').style.setProperty('--p', ep.toFixed(1));
+    $('#tMana').textContent = fmtK(state.mana);
+    $('#tManaMax').textContent = '/' + fmtK(d.maxMana);
+    $('#tKeys').textContent = fmtK(state.keys);
+    $('#tKeysMax').textContent = '/' + fmtK(d.maxKeys);
     var n = E.notifications(state, now());
     setBadge('castle', n.castle); setBadge('quests', n.quests); setBadge('events', n.events);
   }
@@ -820,7 +842,7 @@
     var motes = ''; for (var m = 0; m < 14; m++) motes += '<i style="left:' + (m * 7.3 % 100).toFixed(1) + '%;--t:' + (7 + m % 5 * 1.6).toFixed(1) + 's;--dl:' + (m * 0.63).toFixed(2) + 's;--mx:' + ((m % 2 ? 1 : -1) * (20 + m * 3)) + 'px"></i>';
     el.innerHTML = '<div class="scene"><img class="lay bg" src="' + sc.img + '" alt=""><img class="lay fg" src="' + sc.img + '" alt=""><div class="motes">' + motes + '</div>' + (sc.sprite ? '<img class="spr" src="' + sc.sprite + '" alt="">' : '') +
       '<div class="actor l"><img alt=""></div><div class="actor r"><img alt=""></div><div class="vig"></div><div class="lb t"></div><div class="lb b"></div>' +
-      '<div class="ttl">' + esc(sc.kicker || '') + '<b>' + esc(sc.title || '') + '</b></div></div>' +
+      '<div class="ttl">' + esc(D.g(sc.kicker || '')) + '<b>' + esc(D.g(sc.title || '')) + '</b></div></div>' +
       '<div class="dlg"><div class="who"><img id="sPort" alt=""><b id="sName"></b></div><div class="txt" id="sTxt"></div><div class="choices" id="sCh"></div>' +
       '<div class="hint"><button class="btn sec sm" id="sSkip">Пропустить</button><span id="sHint" class="nx">Нажмите, чтобы продолжить ▸</span></div></div>';
     var lines = sc.lines.slice(), li = -1, typing = null, full = '', sides = {}, nextSide = 'l', waitChoice = false, extra = [];
@@ -849,7 +871,7 @@
     }
     function sayLine(ln) {
       var who = D.CHARS[ln[0]]; actor(ln[0]);
-      el.querySelector('#sPort').src = who.img; el.querySelector('#sName').textContent = who.name; type(ln[1]);
+      el.querySelector('#sPort').src = who.img; el.querySelector('#sName').textContent = who.name; type(D.g(ln[1]));
     }
     var done = false, started = false;
     function show() {
@@ -859,8 +881,8 @@
       pan(li, lines.length);
       if (ln && ln.choice) {
         waitChoice = true; el.querySelector('#sHint').textContent = 'Выберите ответ';
-        chBox.innerHTML = ln.choice.map(function (c, i) { return '<button class="btn sec wide" data-ch="' + i + '" style="animation-delay:' + i * 90 + 'ms">' + esc(c.t) + '</button>'; }).join('');
-        type(ln.prompt || 'Что ответить?'); el.querySelector('#sName').textContent = D.CHARS.hero.name; el.querySelector('#sPort').src = D.CHARS.hero.img; actor('hero');
+        chBox.innerHTML = ln.choice.map(function (c, i) { return '<button class="btn sec wide" data-ch="' + i + '" style="animation-delay:' + i * 90 + 'ms">' + esc(D.g(c.t)) + '</button>'; }).join('');
+        type(D.g(ln.prompt || 'Что ответить?')); el.querySelector('#sName').textContent = D.CHARS.hero.name; el.querySelector('#sPort').src = D.CHARS.hero.img; actor('hero');
         return;
       }
       sayLine(ln);
@@ -896,11 +918,13 @@
   }
   /* показать следующую катсцену из очереди движка, когда ничего не мешает */
   function pumpScenes() {
-    if (sceneOpen || spinning || modalStack.length || queue.length || $('.viewer') || popBusy) return;
-    var id = E.takeScene(state); if (!id) return;
+    if (sceneOpen || spinning || modalStack.length || queue.length || $('.viewer') || popBusy || tutOpen) return;
+    if (!state.hero.chosen) return;
+    if (state.tut.news) { state.tut.news = false; save(); toast('Новое в ' + D.APP_VERSION + ': обучение с вороном Карром и выбор героя/героини — в Настройках', 'img/guide/raven.webp'); }
+    var id = E.takeScene(state); if (!id) { if (!state.tut.done && state.scenes.seen.ch_1) startTutorial(); return; }
     save();
     openScene(id, { onDone: function () {
-      if (id === 'ch_1' && state.stats.spins === 0) queuedDialog('<h2>Добро пожаловать!</h2><p style="text-align:left">• Крутите <b>Колесо Судьбы</b> — каждое вращение тратит энергию.<br>• Энергия восстанавливается со временем, даже когда игра закрыта. Её максимум растёт только со <b>Складом</b>.<br>• На монеты стройте и улучшайте замок — заказы встают в <b>очередь стройки</b> и строятся по реальному времени.<br>• Во время событий из слота выпадают предметы: они наполняют <b>шкалу над барабанами</b> и дарят энергию.<br>• Собирайте карты в коллекции — за каждую собранную даётся постоянный бонус.</p>');
+      if (id === 'ch_1' && !state.tut.done) { setTimeout(startTutorial, 300); return; }
       setTimeout(pumpScenes, 400);
     } });
   }
@@ -920,16 +944,84 @@
         if (p.xp) return '+' + p.xp[n] + ' оп.';
         if (p.mana) return '+' + p.mana[n] + ' маны';
         if (p.keys) return p.keys[n] ? '+' + p.keys[n] + ' кл.' : '—';
-        if (p.cards) return n === 1 ? '15% карта' : p.cards[n] + ' ' + plural(p.cards[n], 'карта', 'карты', 'карт');
+        if (p.cards) return n === 1 ? String(D.CARD_CHANCE_ONE_SYMBOL * 100).replace('.', ',') + '% карта' : n === 2 ? '50%: 1 карта' : '1–' + p.cards[n] + ' карты';
         if (p.chest) return p.chest[n] < 0 ? '—' : D.CHESTS[p.chest[n]].name.split(' ')[0];
         return '—';
       });
       return '<tr><td><img src="' + s.img + '"></td><td style="text-align:left">' + s.name + ' <span class="muted small">(' + D.STRIP_COUNTS[s.id] + '/32)</span></td><td>' + c.join('</td><td>') + '</td></tr>';
     }).join('');
     dialog('<h2>Таблица выплат</h2><div style="overflow-x:auto"><table class="paytable" style="width:100%;border-collapse:collapse"><tr class="muted small"><td></td><td></td><td>×1</td><td>×2</td><td>×3</td></tr>' + rows + '</table></div>' +
-      '<p class="small" style="text-align:left">Награды за каждый символ складываются и умножаются на ставку. B — базовая монета вашего уровня (сейчас ' + fmt(E.derived(state).B) + '). Каждое вращение также даёт ' + fmtXp(D.BASE_XP_PER_BET * D.XP_MUL) + ' опыта за единицу ставки и 3% шанс карты. Опыт за свитки в таблице указан до общего множителя ×' + String(D.XP_MUL).replace('.', ',') + '.</p>' +
+      '<p class="small" style="text-align:left">Награды за каждый символ складываются и умножаются на ставку. B — базовая монета вашего уровня (сейчас ' + fmt(E.derived(state).B) + '). Каждое вращение также даёт ' + fmtXp(D.BASE_XP_PER_BET * D.XP_MUL) + ' опыта за единицу ставки и ' + String(D.CARD_CHANCE_BASE * 100).replace('.', ',') + '% шанс карты. Карты с символов выпадают каждая с шансом ' + Math.round(D.CARD_DROP_MUL * 100) + '% (при трёх в ряд — минимум одна), в среднем ' + String(st.cards.toFixed(3)).replace('.', ',') + ' карты за вращение. Опыт за свитки в таблице указан до общего множителя ×' + String(D.XP_MUL).replace('.', ',') + '.</p>' +
       '<p class="small" style="text-align:left"><b>Возврат монет (RTP): ' + (st.coinsPity * 100).toFixed(2) + '%</b> от ставки в монетах B (без бонусов замка). Колесо щедро к упорным: три короны непременно выпадут в течение нескольких десятков вращений (в среднем раз в ~' + Math.round(st.cycle) + '), а иногда и раньше — просто крутите. Возврат энергии с барабанов: ' + (st.energy * 100).toFixed(1) + '% (плюс шкала событий). Три в ряд: ' + (st.triplesPity * 100).toFixed(2) + '%.</p>' +
       '<p class="small muted" style="text-align:left">Генератор: crypto.getRandomValues (криптостойкий), выбор позиции каждого барабана без смещения (отбраковка значений). Барабаны независимы; единственное исключение — гарантированный джекпот.</p>');
+  }
+  /* ---------- v0.6: выбор героя ---------- */
+  function genderDialog(first) {
+    var cards = ['m', 'f'].map(function (g) { var h = D.HEROES[g];
+      return '<button class="gcard' + (state.hero.g === g && !first ? ' on' : '') + '" data-act="setGender" data-g="' + g + '"><img src="' + h.img + '" alt=""><b>' + h.name + '</b><span>' + h.label + '</span></button>'; }).join('');
+    var m = dialog('<div class="gender"><h2>' + (first ? 'Кто унаследовал замок?' : 'Ваш герой') + '</h2><p class="small">' + (first ? 'Дед оставил Вальдмор внуку… или внучке? Выберите, за кого играть — сменить можно в любой момент в Настройках.' : 'Диалоги и обращения жителей подстроятся под выбор. Прогресс не меняется.') + '</p><div class="gpick">' + cards + '</div></div>',
+      first ? [] : [{ t: 'Назад к настройкам', act: 'backSettings', cls: 'sec' }]);
+    if (first) m.onClose = function () { if (!state.hero.chosen) { state.hero.chosen = true; save(); } dequeue(); };
+    return m;
+  }
+  /* ---------- v0.6: обучение с вороном Карром ---------- */
+  var tutOpen = false;
+  var TUT = [
+    { t: 'Кар-р! Знакомство', x: 'Я Карр — ворон замка Вальдмор и, между прочим, твой наставник. Покажу всё по одному пёрышку: что это, зачем и как этим пользоваться. Пропустить можно в любой момент, повторить — в Настройках.' },
+    { sel: '#spinBtn', t: 'Колесо Судьбы', x: 'Главная кнопка. Жми «Крутить» — три барабана остановятся, и всё, что совпало на линии, твоё: монеты, энергия, ключи, карты, сундуки. Каждое вращение тратит энергию, равную ставке.' },
+    { sel: '.betbox', t: 'Ставка', x: 'Стрелки меняют множитель: ×1, ×2, ×3… Больше ставка — больше награда, но и энергии уходит больше. Новые ставки открываются с уровнем. Не горячись — Колесо любит терпеливых.' },
+    { sel: '#top .res.energy', t: 'Энергия', x: 'Топливо для Колеса. Слева — сколько есть, после «/» — максимум. Зелёное кольцо у значка — сколько осталось до следующей единицы. Энергия копится сама, даже когда игра закрыта. Нажми на значок — покажу точное время.' },
+    { sel: '#top .res.coins', t: 'Монеты', x: 'На монеты строят и улучшают замок. «12.5K» — это 12 500, «1.2M» — 1 200 000. После «/» — вместимость Склада: больше не влезет, так что не копи без дела — строй!' },
+    { sel: '#top .res.keys', t: 'Ключи', x: 'Ключи открывают сундуки сразу, без ожидания. После «/» — размер связки: лишние ключи не поместятся. Связку, как и всё хозяйство, расширяет Склад.' },
+    { sel: '#top .res.mana', t: 'Мана', x: 'Волшебная сила для заклинаний из Башни архимага: удвоить монеты, приманить карты и прочие чудеса. Копится сама, а расходуется только по твоей команде.' },
+    { sel: '#chests', t: 'Сундуки', x: 'Сюда падают сундуки с барабанов. Нажми на сундук, чтобы начать отпирание по таймеру, или открой его ключами прямо сейчас. Внутри монеты, энергия, а иногда и карты.' },
+    { sel: '#evbar', t: 'Шкала события', x: 'Во время праздников с барабанов падают особые предметы. Они наполняют шкалу над Колесом, а за каждый этап — подарок. Каждый праздник — свой предмет.' },
+    { sel: '#tLvl', t: 'Уровень', x: 'Кольцо вокруг цифры — опыт до следующего уровня. Новый уровень открывает ставки, постройки и коллекции. Нажми — увидишь свою летопись.' },
+    { sel: '#nav [data-to="castle"]', t: 'Замок', x: 'А теперь — самое красивое. Здесь твой замок. Пойдём посмотрим!' },
+    { screen: 'castle', sel: '#isoHost', t: 'Постройки', x: 'Карту двигают пальцем и приближают щипком. Каждая постройка что-то даёт: Склад — вместимость, Академия — быстрее энергия, Казна — доход. Нажми на постройку — житель расскажет новости, а потом откроется окно улучшения.' },
+    { screen: 'castle', sel: '#isoHud [data-act="bldList"]', t: 'Улучшения', x: 'Здесь список всех построек. Стрелка ▲ значит «можно улучшить». Улучшение стоит монет и строится по настоящему времени — даже когда игра закрыта.' },
+    { screen: 'castle', sel: '#isoHud [data-act="bqueue"]', t: 'Стройка', x: 'Очередь стройки. Строители работают по одному заказу каждый; Цитадель добавляет строителей и ускоряет работу. Хочешь быстрее — улучшай Цитадель.' },
+    { screen: 'slot', sel: '#nav [data-to="cards"]', t: 'Карты и коллекции', x: 'Карты — осколки Сердца Фортуны. Собери коллекцию целиком — получишь вечный бонус. Карты падают нечасто, так что каждая — праздник. Дубликаты меняй на печати у гнома Бруни.' },
+    { sel: '#nav [data-to="quests"]', t: 'Задания и сюжет', x: 'Главы истории, ежедневные задания и достижения. За каждое — награды, а сюжет… ну, {сам|сама} увидишь. Спойлеров от меня не жди: я ворон приличный.' },
+    { sel: '#nav [data-to="events"]', t: 'События', x: 'Праздники в долине сменяют друг друга. У каждого — своя коллекция, свой предмет для шкалы и свои бонусы. Загляни сюда, когда захочешь узнать, что сейчас празднуют.' },
+    { sel: '#top .gear', t: 'Настройки', x: 'Звук, турбо, анимация карты, катсцены у построек, выбор героя или героини — и это обучение, если захочешь повторить. Я не обижусь. Почти.' },
+    { t: 'Всё, {готов|готова}!', x: 'Крути Колесо, строй замок, собирай карты. Если что — я рядом, на самой высокой башне. Кар-р!' }
+  ];
+  function startTutorial(from) {
+    if (tutOpen) return; tutOpen = true; auto = false;
+    var i = from || 0, el = document.createElement('div'); el.className = 'tut'; $('#app').appendChild(el);
+    function done(skipped) {
+      tutOpen = false; state.tut.done = true; state.tut.step = 0; save(); if (el.parentNode) el.parentNode.removeChild(el);
+      if (screen !== 'slot') go('slot'); if (skipped) toast('Обучение можно пройти снова: Настройки → Обучение с вороном', 'img/guide/raven.webp');
+      setTimeout(pumpScenes, 400);
+    }
+    function show() {
+      var st = TUT[i];
+      if (st.screen && screen !== st.screen) go(st.screen);
+      state.tut.step = i; save();
+      setTimeout(function () {
+        var app = $('#app').getBoundingClientRect(), tg = st.sel ? $(st.sel) : null, r = tg && tg.getBoundingClientRect(), hole = '', top = true;
+        if (r && r.width) {
+          var p = 6, x = r.left - app.left - p, y = r.top - app.top - p, w = r.width + 2 * p, h = r.height + 2 * p;
+          hole = '<div class="tut-hole" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px"></div>';
+          top = (y + h / 2) > app.height / 2;   // цель внизу — подсказка сверху
+        }
+        el.innerHTML = (hole || '<div class="tut-dim"></div>') + '<div class="tut-box ' + (top ? 'at-top' : 'at-bot') + '"><img class="tut-raven" src="img/guide/raven.webp" alt="Ворон Карр">' +
+          '<div class="tut-bub"><div class="tut-k">Карр · ' + (i + 1) + ' из ' + TUT.length + '</div><h3>' + D.g(st.t) + '</h3><p>' + D.g(st.x) + '</p>' +
+          '<div class="tut-btns">' + (i > 0 ? '<button class="btn sec sm" data-t="back">◂ Назад</button>' : '') + '<button class="btn sec sm" data-t="skip">Пропустить</button>' +
+          '<button class="btn green sm" data-t="next">' + (i === TUT.length - 1 ? 'Начать игру!' : 'Дальше ▸') + '</button></div></div></div>';
+      }, st.screen ? 260 : 30);
+    }
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-t]'); if (!b) return; S.click();
+      var t = b.dataset.t;
+      if (t === 'skip') return done(true);
+      if (t === 'back') { i = Math.max(0, i - 1); return show(); }
+      if (i >= TUT.length - 1) return done(false);
+      i++; show();
+    });
+    if (screen !== 'slot' && !TUT[i].screen) go('slot');
+    show();
   }
   function settingsDialog() {
     var s = state.settings;
@@ -937,7 +1029,9 @@
       '<button class="btn sec wide" data-act="toggleSound">' + (s.sound ? '🔊 Звук: вкл' : '🔇 Звук: выкл') + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="turbo">' + (s.turbo ? '⚡ Турбо-вращение: вкл' : '⚡ Турбо-вращение: выкл') + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="mapFx">🏮 Анимация карты: ' + ({ high: 'полная', low: 'экономная', off: 'выкл' })[s.mapFx || 'high'] + '</button><div style="height:8px"></div>' +
-      '<button class="btn sec wide" data-act="toggleResidents">' + (s.residents === false ? '💬 Сценки жителей: выкл' : '💬 Сценки жителей: вкл') + '</button><div style="height:8px"></div>' +
+      '<button class="btn sec wide" data-act="toggleResidents">' + (s.residents === false ? '🎬 Катсцены у построек: выкл' : '🎬 Катсцены у построек: вкл') + '</button><div style="height:8px"></div>' +
+      '<button class="btn sec wide" data-act="gender">' + (state.hero.g === 'f' ? '👩' : '👦') + ' ' + D.HEROES[state.hero.g].label + ': ' + D.HEROES[state.hero.g].name + ' — сменить</button><div style="height:8px"></div>' +
+      '<button class="btn sec wide" data-act="tutorial">🐦‍⬛ Обучение с вороном — пройти снова</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="paytable">📜 Выплаты и RTP</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="export">💾 Экспорт сохранения</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="import">📥 Импорт сохранения</button><div style="height:8px"></div>' +
@@ -961,7 +1055,7 @@
   }
   function profileDialog() {
     var d = E.derived(state), st = state.stats;
-    dialog('<h2>Лорд Вальдмора</h2>' + effRow('Уровень', state.level) + effRow('Опыт', fmtXp(state.xp) + ' / ' + fmt(D.xpNeed(state.level))) + effRow('Базовая монета B', fmt(d.B)) +
+    dialog('<h2>' + D.g('Лорд Вальдмора') + '</h2>' + effRow('Уровень', state.level) + effRow('Опыт', fmtXp(state.xp) + ' / ' + fmt(D.xpNeed(state.level))) + effRow('Базовая монета B', fmt(d.B)) +
       effRow('Бонус монет', '+' + Math.round((d.coinMul - 1) * 100) + '%') + effRow('Бонус опыта', '+' + Math.round((d.xpMul - 1) * 100) + '%') + effRow('Шанс редких карт', '+' + Math.round(d.rare * 100) + '%') +
       effRow('Вращений', fmt(st.spins)) + effRow('Выиграно монет', fmt(st.coinsWon)) + effRow('Лучший выигрыш', fmt(st.bestWin)) + effRow('Три в ряд', fmt(st.triples)) + effRow('Джекпотов', st.jackpots) + effRow('Печати', state.seals), [{ t: 'Закрыть', act: 'close', cls: 'sec' }]);
   }
@@ -1001,6 +1095,13 @@
     isoZoom: function (d) { if (iso) iso.zoomBy(+d.f); },
     isoHome: function () { if (iso) iso.home(); },
     mapFx: function () { var o = ['high', 'low', 'off'], c = state.settings.mapFx || 'high'; state.settings.mapFx = o[(o.indexOf(c) + 1) % 3]; save(); closeModal(); settingsDialog(); },
+    resInfo: function (d) { resInfo(d.r); },
+    gender: function () { closeModal(); genderDialog(false); },
+    setGender: function (d) {
+      var first = !state.hero.chosen; state.hero.g = d.g === 'f' ? 'f' : 'm'; state.hero.chosen = true; D.setHero(state.hero.g); saveNow(); S.click();
+      closeModal(); if (!first) { toast((state.hero.g === 'f' ? 'Героиня' : 'Герой') + ': ' + D.HEROES[state.hero.g].name + '. Диалоги теперь обращаются к вам как к ' + (state.hero.g === 'f' ? 'миледи' : 'милорду') + '.', D.HEROES[state.hero.g].img); settingsDialog(); }
+    },
+    tutorial: function () { closeAllModals(); startTutorial(); },
     toggleResidents: function () { state.settings.residents = state.settings.residents === false; save(); closeModal(); settingsDialog(); },
     upgrade: function (d) {
       var r = E.upgrade(state, d.id, now()); if (!r.ok) return fail(r);
@@ -1107,6 +1208,7 @@
   /* ---------- запуск ---------- */
   function boot() {
     var src = load(), before = { energy: state.energy, mana: state.mana, high: state.time.high };
+    D.setHero(state.hero.g);
     S.setEnabled(state.settings.sound);
     var evs = E.tick(state, now());
     state.chests.forEach(function (c, i) { readyChests[i] = !!(c && c.end && state.time.high >= c.end); });
@@ -1118,7 +1220,8 @@
     }
     if (src === 'backup') toast('Основное сохранение повреждено — загружена резервная копия');
     if (state.time.rollback) toast('Часы устройства переведены назад — восстановление на паузе', IC.energy);
-    if (window.__skipIntro) { state.scenes.queue = []; }
+    if (window.__skipIntro) { state.scenes.queue = []; state.hero.chosen = true; state.tut.done = true; state.tut.news = false; }
+    if (!state.hero.chosen) enqueue(function () { genderDialog(true); });   // v0.6: сначала — кто унаследовал замок
     pumpScenes();
     handleTickEvents(evs);
     saveNow();
@@ -1138,7 +1241,7 @@
     setTurbo: function (v) { state.settings.turbo = !!v; },
     openStory: openStory, openScene: openScene, cardPop: cardPop, pumpScenes: pumpScenes, openViewer: openViewer, sceneOpen: function () { return sceneOpen; }, openBuilding: function (id) { ACT.bld({ id: id }); }, tapBuilding: function (id) { tapBuilding(id); }, iso: function () { return iso; },
     openCollection: function (id) { ACT.col({ id: id }); }, queueLen: function () { return queue.length; },
-    setQtab: function (t) { qtab = t; },
+    setQtab: function (t) { qtab = t; }, startTutorial: function (i) { startTutorial(i); }, tutOpen: function () { return tutOpen; }, genderDialog: function (f) { genderDialog(f); }, fmtK: fmtK,
     /* кнопка «Назад» Android: закрыть верхнее окно; false — окон нет, можно спросить о выходе */
     back: function () {
       var v = document.querySelector('.viewer'); if (v) { v.querySelector('[data-vact="x"]').click(); return true; }
