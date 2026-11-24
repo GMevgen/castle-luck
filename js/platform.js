@@ -89,8 +89,12 @@
       if (first || reloading) return; // первая установка — просто взяли управление
       reloading = true; if (root.CLGame) try { root.CLGame.saveNow(); } catch (e) { } location.reload();
     });
-    nav.serviceWorker.register('sw.js').then(function (r) {
-      reg = r; P.sw.registered = true;
+    /* 0.7: страница работает с <base href="themes/<тема>/">, поэтому sw.js — двумя уровнями выше (корень игры, область — вся игра).
+       В кэш при установке идут общие файлы и «Аниме»; файлы другой выбранной темы SW докачивает по сообщению CACHE_THEME. */
+    function cacheTheme() { try { var t = root.CL && CL.THEMES && CL.THEMES.active; if (t && nav.serviceWorker.controller) nav.serviceWorker.controller.postMessage({ type: 'CACHE_THEME', id: t }); } catch (e) { } }
+    nav.serviceWorker.addEventListener('controllerchange', cacheTheme);
+    nav.serviceWorker.register('../../sw.js').then(function (r) {
+      reg = r; P.sw.registered = true; cacheTheme();
       if (r.waiting && nav.serviceWorker.controller) ready(r.waiting);
       r.addEventListener('updatefound', function () {
         var w = r.installing; if (!w) return;

@@ -5,6 +5,7 @@
   'use strict';
   var CL = root.CL, D = CL.Data;
   var ISO = D.ISO, SPR = CL.IsoSpr || {};
+  var LFONT = (CL.Theme && CL.Theme.iso('labelFont', null)) || 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';   // 0.7: шрифт подписей — из темы
   var imgs = {}, masks = {};
   function img(name) {
     var im = imgs[name];
@@ -157,7 +158,7 @@
       // дым из труб
       model.forEach(function (m) {
         if (m.locked || m.lvl <= 0) return;
-        var name = D.bldSprite(m.id, m.lvl), ch = ISO.smoke[name]; if (!ch) return;
+        var name = D.bldSprite(m.id, m.lvl), ch = ((window.CL && CL.Theme && CL.Theme.iso('smoke', null)) || ISO.smoke)[name]; if (!ch) return;   // 0.7: трубы — у каждой темы свои
         var r = placeSprite(name, ISO.plots[m.id], 1.1);
         ch.forEach(function (c, j) { var key = name + j; if ((emitT[key] || 0) < T) { emitT[key] = T + 0.32 + Math.random() * 0.2; puff(r.x + r.w * c[0], r.y + r.h * c[1], 'smoke'); } });
       });
@@ -179,6 +180,7 @@
     }
     function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
     function drawLabels(now) {
+      if (window.__noIsoLabels) return;   // 0.7: для снимков-превью стилей
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
       var fs = Math.round(Math.min(14, Math.max(11, 9 + cam.z * 3)));
@@ -189,7 +191,7 @@
         if (m.locked) sub = 'Откроется на ' + m.unlock + ' ур.';
         else if (m.job && !m.job.active) sub = 'в очереди → ' + m.job.to;
         else if (!m.job && m.lvl <= 0) sub = m.can ? 'Можно построить' : 'Не построено';
-        ctx.font = '800 ' + fs + 'px system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+        ctx.font = '800 ' + fs + 'px ' + LFONT;
         var w = ctx.measureText(t).width + 18 + (m.can && !m.job && !m.locked ? 18 : 0), h = fs + 10, x = s[0] - w / 2, y = s[1];
         rr(x, y, w, h, h / 2); ctx.fillStyle = m.locked ? 'rgba(70,58,46,.82)' : 'rgba(251,244,228,.94)'; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = m.job ? '#3f7fae' : m.can && !m.locked ? '#5aa04a' : '#d9a441'; ctx.stroke();
@@ -204,7 +206,7 @@
           sub = '🔨 → ' + m.job.to + ' · ' + api.fmtTime(m.job.end - now); yy += 10;
         }
         if (sub) {
-          ctx.font = '700 ' + (fs - 1) + 'px system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+          ctx.font = '700 ' + (fs - 1) + 'px ' + LFONT;
           var sw = ctx.measureText(sub).width + 12; rr(s[0] - sw / 2, yy, sw, fs + 4, 6); ctx.fillStyle = 'rgba(30,22,14,.6)'; ctx.fill();
           ctx.fillStyle = '#fff6e2'; ctx.fillText(sub, s[0], yy + (fs + 4) / 2 + 0.5);
         }

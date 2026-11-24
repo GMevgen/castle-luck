@@ -30,6 +30,25 @@
     B.forEach(function (b) { blob(b[0] - b[2] * 0.2, b[1] - b[2] * 0.42, b[2] * 0.4, '255,246,226', 0.7); }); // тёплый блик
     return c;
   }
+  /* 0.7: эффекты по теме — в «Киберпанке» (fx.ambient = 'neon') вместо фонариков дроны, вместо облаков смог, вместо фей голо-искры, вместо птиц — стаи микродронов */
+  function NEON() { try { return !!(CL.Theme && CL.Theme.fx('ambient') === 'neon'); } catch (e) { return false; } }
+  function smog(seed, w, h) {
+    var c = cnv(w, h), g = c.getContext('2d'), s = seed;
+    function r2() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+    for (var i = 0; i < 9; i++) { var x = w * (0.15 + 0.7 * r2()), y = h * (0.35 + 0.35 * r2()), rr = h * (0.25 + 0.2 * r2()), gr = g.createRadialGradient(x, y, 0, x, y, rr);
+      gr.addColorStop(0, 'rgba(120,70,190,.35)'); gr.addColorStop(1, 'rgba(60,30,110,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fill(); }
+    return c;
+  }
+  function drone() { // квадрокоптер-курьер: корпус, четыре винта, голубая подсветка снизу
+    var W = 48, H = 60, c = cnv(W, H), g = c.getContext('2d');
+    var gr = g.createRadialGradient(24, 36, 1, 24, 36, 20); gr.addColorStop(0, 'rgba(0,229,255,.55)'); gr.addColorStop(1, 'rgba(0,229,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.strokeStyle = '#2a2f45'; g.lineWidth = 2; g.beginPath(); g.moveTo(12, 24); g.lineTo(36, 34); g.moveTo(36, 24); g.lineTo(12, 34); g.stroke();
+    g.fillStyle = 'rgba(160,240,255,.45)'; [[12, 24], [36, 24], [12, 34], [36, 34]].forEach(function (r) { g.beginPath(); g.ellipse(r[0], r[1] - 1, 7, 2, 0, 0, TAU); g.fill(); });
+    g.fillStyle = '#1b1f33'; g.beginPath(); g.ellipse(24, 29, 7, 5, 0, 0, TAU); g.fill(); g.strokeStyle = '#00e5ff'; g.lineWidth = 1; g.stroke();
+    g.fillStyle = '#ff3cc8'; g.beginPath(); g.arc(24, 28, 1.6, 0, TAU); g.fill();
+    g.fillStyle = 'rgba(255,200,80,.85)'; g.fillRect(21, 34, 6, 5);   // посылка
+    return c;
+  }
   function lantern() { // бумажный фонарик (васи): тёплое свечение, рёбра, тёмные крышка и донце
     var W = 48, H = 60, c = cnv(W, H), g = c.getContext('2d');
     var gr = g.createRadialGradient(24, 30, 2, 24, 30, 26); gr.addColorStop(0, 'rgba(255,200,110,.5)'); gr.addColorStop(1, 'rgba(255,150,60,0)');
@@ -45,6 +64,12 @@
   }
   function initSprites() {
     if (SPR) return SPR;
+    if (NEON()) {
+      SPR = { neon: true, lamp: glow(24, '0,229,255', 0.6), fairy: [glow(16, '0,229,255'), glow(16, '255,60,200'), glow(16, '170,110,255')], spark: glow(8, '200,250,255', 1),
+              ember: glow(8, '255,90,210', 1), lantern: drone(), clouds: [smog(3, 260, 110), smog(11, 300, 120), smog(29, 220, 100)],
+              shadows: [cloud(3, 130, 55, true), cloud(11, 150, 60, true), cloud(29, 110, 50, true)] };
+      return SPR;
+    }
     SPR = { lamp: glow(24, '255,200,110', 0.75), fairy: [glow(16, '190,255,200'), glow(16, '255,190,240'), glow(16, '190,225,255')], spark: glow(8, '255,250,210', 1),
             ember: glow(8, '255,190,80', 1), lantern: lantern(), clouds: [cloud(3, 260, 110), cloud(11, 300, 120), cloud(29, 220, 100)],
             shadows: [cloud(3, 130, 55, true), cloud(11, 150, 60, true), cloud(29, 110, 50, true)] };
@@ -166,13 +191,22 @@
       fairies.forEach(function (F) {
         if (F.x == null || !inView(v, F.x, F.y, 20)) return;
         g.globalCompositeOperation = 'lighter'; g.drawImage(S.fairy[F.c], F.x - 13, F.y - 13, 26, 26); g.globalCompositeOperation = 'source-over';
+        if (S.neon) { g.fillStyle = '#e8fdff'; g.fillRect(F.x - 1.5, F.y - 1.5, 3, 3); return; }   // голо-искра без крылышек
         var fw = 0.4 + 0.6 * Math.abs(Math.sin(T * 38 + F.a));
         g.fillStyle = 'rgba(235,250,255,.75)';
         g.beginPath(); g.ellipse(F.x - 2.4, F.y - 1.5, 2.6 * fw, 1.3, -0.6, 0, TAU); g.fill();
         g.beginPath(); g.ellipse(F.x + 2.4, F.y - 1.5, 2.6 * fw, 1.3, 0.6, 0, TAU); g.fill();
         g.fillStyle = '#fffbe8'; g.beginPath(); g.arc(F.x, F.y, 1.2, 0, TAU); g.fill();
       });
-      // птицы стайками
+      // птицы стайками (в неоне — микродроны с мигающими огнями)
+      if (S.neon) {
+        for (i = 0; i < flocks.length; i++) {
+          var fd = flocks[i]; if (!inView(v, fd.x, fd.y, 90)) continue;
+          for (var jd = 0; jd < fd.b.length; jd++) { var bd = fd.b[jd], dx = fd.x + bd.ox * Math.sign(fd.vx), dy = fd.y + bd.oy;
+            g.fillStyle = '#1b1f33'; g.fillRect(dx - 3, dy - 1, 6, 2);
+            g.fillStyle = Math.sin(T * 6 + bd.f) > 0 ? '#ff3cc8' : '#00e5ff'; g.fillRect(dx - 1, dy - 1, 2, 2); }
+        }
+      } else {
       g.strokeStyle = 'rgba(52,58,72,.78)'; g.lineCap = 'round'; g.lineWidth = 1.3;
       for (i = 0; i < flocks.length; i++) {
         var f = flocks[i]; if (!inView(v, f.x, f.y, 90)) continue; g.beginPath();
@@ -181,6 +215,7 @@
           g.moveTo(bx - s2, by - fp); g.quadraticCurveTo(bx - s2 / 2, by - 2 - fp / 2, bx, by); g.quadraticCurveTo(bx + s2 / 2, by - 2 - fp / 2, bx + s2, by - fp);
         }
         g.stroke();
+      }
       }
       // облака (выше всего; лёгкий параллакс относительно камеры)
       var px = (cam.x - 512) * 0.18, py = (cam.y - 512) * 0.18;

@@ -26,6 +26,7 @@
     var skills = {}; D.SKILLS.forEach(function (k) { skills[k.id] = 0; });
     var s = {
       v: D.SAVE_VERSION, created: now,
+      theme: (globalThis.CL && CL.THEMES && CL.THEMES.active) || 'anime', themeAsked: false, seenVer: D.APP_VERSION,   // 0.7
       time: { high: now, rollback: false },
       level: 1, xp: 0, coins: 2500, energy: 100, mana: 30, keys: 2, seals: 0,
       energyT: now, manaT: now, treasuryT: now,
@@ -90,6 +91,12 @@
       o.hero = { g: 'm', chosen: true };
       o.tut = { done: true, step: 0, news: true };
       o.v = 4; return o;
+    },
+    /* v4 → v5 (игра 0.7 бета): стиль оформления. Старые игроки остаются в «Аниме», один раз им предложат выбрать стиль;
+       «Что нового» покажет изменения с 0.6.1. Прогресс не трогается. */
+    4: function (o) {
+      o.theme = 'anime'; o.themeAsked = false; o.seenVer = '0.6.1 (бета)';
+      o.v = 5; return o;
     }
   };
   E.migrate = function (raw, now) {

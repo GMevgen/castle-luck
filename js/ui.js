@@ -1043,6 +1043,7 @@
       '<button class="btn sec wide" data-act="mapFx">🏮 Анимация карты: ' + ({ high: 'полная', low: 'экономная', off: 'выкл' })[s.mapFx || 'high'] + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="toggleResidents">' + (s.residents === false ? '🎬 Катсцены у построек: выкл' : '🎬 Катсцены у построек: вкл') + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="gender">' + (state.hero.g === 'f' ? '👩' : '👦') + ' ' + D.HEROES[state.hero.g].label + ': ' + D.HEROES[state.hero.g].name + ' — сменить</button><div style="height:8px"></div>' +
+      (window.CLV07 ? CLV07.settingsHTML() : '') +
       '<button class="btn sec wide" data-act="tutorial">🐦‍⬛ Обучение с вороном — пройти снова</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="paytable">📜 Выплаты и RTP</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="export">💾 Экспорт сохранения</button><div style="height:8px"></div>' +
@@ -1233,8 +1234,9 @@
     }
     if (src === 'backup') toast('Основное сохранение повреждено — загружена резервная копия');
     if (state.time.rollback) toast('Часы устройства переведены назад — восстановление на паузе', IC.energy);
-    if (window.__skipIntro) { state.scenes.queue = []; state.hero.chosen = true; state.tut.done = true; state.tut.news = false; state.tut.x2 = true; state.tut.x3 = true; }
+    if (window.__skipIntro) { state.scenes.queue = []; state.hero.chosen = true; state.tut.done = true; state.tut.news = false; state.tut.x2 = true; state.tut.x3 = true; state.themeAsked = true; state.seenVer = D.APP_VERSION; }
     if (!state.hero.chosen) enqueue(function () { genderDialog(true); });   // v0.6: сначала — кто унаследовал замок
+    if (window.CLV07) CLV07.onBoot(src);   // 0.7: «Что нового» и выбор стиля оформления (после выбора героя)
     pumpScenes();
     handleTickEvents(evs);
     saveNow();
@@ -1249,6 +1251,7 @@
   window.CLUI = {
     get state() { return state; }, get screen() { return screen; }, rng: rng, now: now, ACT: ACT, IC: IC, S: S,
     dialog: dialog, openSheet: openSheet, refreshSheet: refreshSheet, closeModal: closeModal, closeAll: function () { closeAllModals(); },
+    enqueue: enqueue, dequeue: dequeue,
     toast: toast, save: save, saveNow: saveNow, refreshAll: function () { refreshAll(); }, updateTop: function () { updateTop(); }, go: function (t) { go(t); },
     fmt: fmt, fmtK: fmtK, fmtTime: fmtTime, esc: esc, plural: plural, pill: pill, bar: bar, showReward: showReward, cardPop: cardPop,
     openScene: function (id, o) { openScene(id, o); }, pumpScenes: function () { pumpScenes(); }, startTutorial: function (i, list) { startTutorial(i, list); },

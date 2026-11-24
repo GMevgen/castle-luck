@@ -1,0 +1,4 @@
+/* 0.7: тема «Аниме» — картинки интерфейса из папки темы (пути относительно этого файла). Основной стиль — css/style.css. */
+#app{background-image:url(img/ui/castle_bg.webp)}
+#boot{background-image:url(img/ui/castle_bg.webp)}
+.vil{background-image:url(img/iso/map.webp)}
