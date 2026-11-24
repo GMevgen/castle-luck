@@ -31,7 +31,47 @@
     return c;
   }
   /* 0.7: эффекты по теме — в «Киберпанке» (fx.ambient = 'neon') вместо фонариков дроны, вместо облаков смог, вместо фей голо-искры, вместо птиц — стаи микродронов */
-  function NEON() { try { return !!(CL.Theme && CL.Theme.fx('ambient') === 'neon'); } catch (e) { return false; } }
+  function AMB() { try { return (CL.Theme && CL.Theme.fx('ambient')) || ''; } catch (e) { return ''; } }
+  function NEON() { return AMB() === 'neon'; }
+  /* фаза B: «gloom» (тёмное фэнтези) — блуждающие огоньки, туман, летучие мыши; «ash» (карандаш) — дым и пепел, вороны;
+     «paper» (цветные карандаши) — воздушные шарики, бабочки; «toon» (мультяшный) — шарики, бабочки, пухлые облака с обводкой */
+  function mist(seed, w, h, c0, c1, n) {
+    var c = cnv(w, h), g = c.getContext('2d'), s = seed;
+    function r2() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+    for (var i = 0; i < (n || 9); i++) { var x = w * (0.15 + 0.7 * r2()), y = h * (0.35 + 0.35 * r2()), rr = h * (0.25 + 0.2 * r2()), gr = g.createRadialGradient(x, y, 0, x, y, rr);
+      gr.addColorStop(0, 'rgba(' + c0 + ')'); gr.addColorStop(1, 'rgba(' + c1 + ',0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fill(); }
+    return c;
+  }
+  function wisp() { // блуждающий огонёк: холодное пламя с хвостиком
+    var W = 48, H = 60, c = cnv(W, H), g = c.getContext('2d');
+    var gr = g.createRadialGradient(24, 34, 1, 24, 34, 22); gr.addColorStop(0, 'rgba(170,255,230,.55)'); gr.addColorStop(1, 'rgba(90,200,190,0)'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.beginPath(); g.moveTo(24, 14); g.quadraticCurveTo(33, 30, 30, 38); g.arc(24, 37, 6.5, 0.2, Math.PI - 0.2); g.quadraticCurveTo(15, 30, 24, 14); g.closePath();
+    var b = g.createRadialGradient(24, 36, 1, 24, 32, 14); b.addColorStop(0, '#f4fffb'); b.addColorStop(0.5, '#9ff5df'); b.addColorStop(1, 'rgba(60,170,170,.2)'); g.fillStyle = b; g.fill();
+    return c;
+  }
+  function puff(col, a) { // клуб дыма (карандаш): серый, с лёгкой «штриховкой»
+    var W = 48, H = 60, c = cnv(W, H), g = c.getContext('2d');
+    [[24, 34, 12], [16, 38, 8], [32, 37, 9], [24, 26, 9]].forEach(function (b) { var gr = g.createRadialGradient(b[0], b[1], 1, b[0], b[1], b[2]); gr.addColorStop(0, 'rgba(' + col + ',' + a + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)'); g.fillStyle = gr; g.beginPath(); g.arc(b[0], b[1], b[2], 0, TAU); g.fill(); });
+    g.strokeStyle = 'rgba(40,40,40,.25)'; g.lineWidth = 0.6; for (var k = 0; k < 7; k++) { g.beginPath(); g.moveTo(14 + k * 3, 42); g.lineTo(20 + k * 3, 28); g.stroke(); }
+    return c;
+  }
+  function balloon(fill, edge, outline) { // воздушный шарик на ниточке
+    var W = 48, H = 60, c = cnv(W, H), g = c.getContext('2d');
+    g.strokeStyle = outline ? '#2a2a2a' : 'rgba(80,60,40,.6)'; g.lineWidth = 0.9; g.beginPath(); g.moveTo(24, 42); g.quadraticCurveTo(20, 50, 25, 58); g.stroke();
+    g.beginPath(); g.ellipse(24, 26, 11, 14, 0, 0, TAU); var b = g.createRadialGradient(20, 21, 1, 24, 26, 15); b.addColorStop(0, '#ffffff'); b.addColorStop(0.35, fill); b.addColorStop(1, edge); g.fillStyle = b; g.fill();
+    if (outline) { g.lineWidth = 2; g.strokeStyle = '#2a2a2a'; g.stroke(); }
+    g.fillStyle = edge; g.beginPath(); g.moveTo(21, 41); g.lineTo(27, 41); g.lineTo(24, 38); g.fill();
+    return c;
+  }
+  function toonCloud(seed, w, h) { // пухлое мультяшное облако с тёмной обводкой
+    var c = cnv(w, h), g = c.getContext('2d'), s = seed, B = [];
+    function r2() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+    for (var i = 0; i < 6; i++) B.push([w * (0.2 + 0.6 * i / 5), h * (0.5 + 0.12 * (r2() - 0.5)), h * (0.18 + 0.14 * r2())]);
+    g.fillStyle = '#2b3a55'; B.forEach(function (b) { g.beginPath(); g.arc(b[0], b[1], b[2] + 3, 0, TAU); g.fill(); });
+    g.fillStyle = '#ffffff'; B.forEach(function (b) { g.beginPath(); g.arc(b[0], b[1], b[2], 0, TAU); g.fill(); });
+    g.fillStyle = '#dbe9ff'; B.forEach(function (b) { g.beginPath(); g.arc(b[0] + b[2] * 0.15, b[1] + b[2] * 0.35, b[2] * 0.6, 0, Math.PI); g.fill(); });
+    return c;
+  }
   function smog(seed, w, h) {
     var c = cnv(w, h), g = c.getContext('2d'), s = seed;
     function r2() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
@@ -68,6 +108,30 @@
       SPR = { neon: true, lamp: glow(24, '0,229,255', 0.6), fairy: [glow(16, '0,229,255'), glow(16, '255,60,200'), glow(16, '170,110,255')], spark: glow(8, '200,250,255', 1),
               ember: glow(8, '255,90,210', 1), lantern: drone(), clouds: [smog(3, 260, 110), smog(11, 300, 120), smog(29, 220, 100)],
               shadows: [cloud(3, 130, 55, true), cloud(11, 150, 60, true), cloud(29, 110, 50, true)] };
+      return SPR;
+    }
+    var A = AMB();
+    if (A === 'gloom') {
+      SPR = { flock: 'bat', lamp: glow(24, '150,255,220', 0.6), fairy: [glow(16, '150,255,220'), glow(16, '190,170,255'), glow(16, '120,220,255')], spark: glow(8, '210,255,240', 1),
+              ember: glow(8, '255,150,60', 1), lantern: wisp(), fairyMode: 'spark',
+              clouds: [mist(3, 260, 110, '70,60,100,.45', '40,30,70'), mist(11, 300, 120, '70,60,100,.45', '40,30,70'), mist(29, 220, 100, '70,60,100,.45', '40,30,70')],
+              shadows: [cloud(3, 130, 55, true), cloud(11, 150, 60, true), cloud(29, 110, 50, true)] };
+      return SPR;
+    }
+    if (A === 'ash') {
+      SPR = { flock: 'bird', birdCol: 'rgba(25,25,25,.85)', lamp: null, fairy: [glow(16, '230,120,60'), glow(16, '200,200,200'), glow(16, '160,160,160')], spark: glow(8, '230,230,230', 1),
+              ember: glow(8, '255,120,50', 1), lantern: puff('110,110,110', 0.5), fairyMode: 'spark',
+              clouds: [mist(3, 260, 110, '90,90,90,.4', '60,60,60'), mist(11, 300, 120, '90,90,90,.4', '60,60,60'), mist(29, 220, 100, '90,90,90,.4', '60,60,60')],
+              shadows: [cloud(3, 130, 55, true), cloud(11, 150, 60, true), cloud(29, 110, 50, true)] };
+      return SPR;
+    }
+    if (A === 'paper' || A === 'toon') {
+      var ol = A === 'toon', cols = [['#ff6b6b', '#c0392b'], ['#ffd93d', '#d4a017'], ['#6bcBff', '#2a7fc0'], ['#8be37b', '#3c9a2f'], ['#c38bff', '#7a3fc0']];
+      SPR = { flock: 'bird', lamp: null, fairy: [glow(16, '255,200,120'), glow(16, '255,160,220'), glow(16, '160,220,255')], spark: glow(8, '255,250,210', 1),
+              ember: glow(8, '255,190,80', 1), balloons: cols.map(function (c) { return balloon(c[0], c[1], ol); }), fairyMode: 'butterfly',
+              clouds: ol ? [toonCloud(3, 260, 110), toonCloud(11, 300, 120), toonCloud(29, 220, 100)] : [cloud(3, 260, 110), cloud(11, 300, 120), cloud(29, 220, 100)],
+              shadows: [cloud(3, 130, 55, true), cloud(11, 150, 60, true), cloud(29, 110, 50, true)] };
+      SPR.lantern = SPR.balloons[0];
       return SPR;
     }
     SPR = { lamp: glow(24, '255,200,110', 0.75), fairy: [glow(16, '190,255,200'), glow(16, '255,190,240'), glow(16, '190,225,255')], spark: glow(8, '255,250,210', 1),
@@ -182,9 +246,9 @@
         if (!inView(v, x, y, 30)) continue;
         var fl = 0.85 + 0.15 * Math.sin(T * 7 + L.fl) * Math.sin(T * 3.1 + L.ph), al = Math.max(0, Math.min(1, L.fade));
         sc *= 1 - Math.min(0.35, L.alt / 1300); // выше — чуть меньше
-        if (q === 'high' && al > 0.25) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = al * fl * 0.6; g.drawImage(S.lamp, x - 31 * sc, y - 36 * sc, 62 * sc, 62 * sc); g.globalCompositeOperation = 'source-over'; }
+        if (q === 'high' && al > 0.25 && S.lamp) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = al * fl * 0.6; g.drawImage(S.lamp, x - 31 * sc, y - 36 * sc, 62 * sc, 62 * sc); g.globalCompositeOperation = 'source-over'; }
         g.globalAlpha = al * (0.8 + 0.2 * fl);
-        g.drawImage(S.lantern, x - 24 * sc, y - 34 * sc, 48 * sc, 60 * sc);
+        g.drawImage(S.balloons ? S.balloons[i % S.balloons.length] : S.lantern, x - 24 * sc, y - 34 * sc, 48 * sc, 60 * sc);
       }
       g.globalAlpha = 1;
       // феи: свечение + крылышки
@@ -192,6 +256,14 @@
         if (F.x == null || !inView(v, F.x, F.y, 20)) return;
         g.globalCompositeOperation = 'lighter'; g.drawImage(S.fairy[F.c], F.x - 13, F.y - 13, 26, 26); g.globalCompositeOperation = 'source-over';
         if (S.neon) { g.fillStyle = '#e8fdff'; g.fillRect(F.x - 1.5, F.y - 1.5, 3, 3); return; }   // голо-искра без крылышек
+        if (S.fairyMode === 'spark') { g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.arc(F.x, F.y, 1.4, 0, TAU); g.fill(); return; }
+        if (S.fairyMode === 'butterfly') {   // бабочка: два цветных крыла
+          var bw = 0.3 + 0.7 * Math.abs(Math.sin(T * 14 + F.a)), bc = ['#ff7eb6', '#ffd23f', '#6fc3ff'][F.c % 3];
+          g.fillStyle = bc; g.strokeStyle = 'rgba(40,30,30,.7)'; g.lineWidth = 0.8;
+          g.beginPath(); g.ellipse(F.x - 3.2 * bw, F.y - 1, 3.4 * bw, 2.6, -0.4, 0, TAU); g.fill(); g.stroke();
+          g.beginPath(); g.ellipse(F.x + 3.2 * bw, F.y - 1, 3.4 * bw, 2.6, 0.4, 0, TAU); g.fill(); g.stroke();
+          g.fillStyle = '#2b2020'; g.fillRect(F.x - 0.6, F.y - 3, 1.2, 5); return;
+        }
         var fw = 0.4 + 0.6 * Math.abs(Math.sin(T * 38 + F.a));
         g.fillStyle = 'rgba(235,250,255,.75)';
         g.beginPath(); g.ellipse(F.x - 2.4, F.y - 1.5, 2.6 * fw, 1.3, -0.6, 0, TAU); g.fill();
@@ -206,8 +278,16 @@
             g.fillStyle = '#1b1f33'; g.fillRect(dx - 3, dy - 1, 6, 2);
             g.fillStyle = Math.sin(T * 6 + bd.f) > 0 ? '#ff3cc8' : '#00e5ff'; g.fillRect(dx - 1, dy - 1, 2, 2); }
         }
+      } else if (S.flock === 'bat') {   // летучие мыши: тёмные угловатые крылья
+        g.fillStyle = 'rgba(14,10,22,.85)';
+        for (i = 0; i < flocks.length; i++) {
+          var fb = flocks[i]; if (!inView(v, fb.x, fb.y, 90)) continue;
+          for (var jb = 0; jb < fb.b.length; jb++) { var bb = fb.b[jb], bx2 = fb.x + bb.ox * Math.sign(fb.vx), by2 = fb.y + bb.oy, fp2 = Math.sin(T * bb.fs * 1.6 + bb.f) * 3.5 * fb.s, w2 = 6.5 * fb.s;
+            g.beginPath(); g.moveTo(bx2, by2); g.lineTo(bx2 - w2 * 0.5, by2 - 2 - fp2); g.lineTo(bx2 - w2, by2 - fp2 * 0.4); g.lineTo(bx2 - w2 * 0.55, by2 + 0.5); g.lineTo(bx2, by2 + 1.5);
+            g.lineTo(bx2 + w2 * 0.55, by2 + 0.5); g.lineTo(bx2 + w2, by2 - fp2 * 0.4); g.lineTo(bx2 + w2 * 0.5, by2 - 2 - fp2); g.closePath(); g.fill(); }
+        }
       } else {
-      g.strokeStyle = 'rgba(52,58,72,.78)'; g.lineCap = 'round'; g.lineWidth = 1.3;
+      g.strokeStyle = S.birdCol || 'rgba(52,58,72,.78)'; g.lineCap = 'round'; g.lineWidth = 1.3;
       for (i = 0; i < flocks.length; i++) {
         var f = flocks[i]; if (!inView(v, f.x, f.y, 90)) continue; g.beginPath();
         for (var j = 0; j < f.b.length; j++) {

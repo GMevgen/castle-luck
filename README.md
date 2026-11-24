@@ -17,3 +17,5 @@ Version 0.6 (beta), phase 2.
 Version 0.6.1 (beta) adds sword attacks.
 
 Version 0.7 (beta) adds visual styles, including anime and cyberpunk.
+
+Version 0.7 (beta) also adds dark fantasy and pencil styles.
