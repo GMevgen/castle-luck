@@ -160,7 +160,7 @@
       var at = s.raid.nextT, h = hash01(at), rv = D.RIVALS[Math.floor(hash01(at + 1) * D.RIVALS.length)], e;
       if (s.raid.shields > 0) { s.raid.shields--; e = logPush(s, { dir: 'in', rival: rv.id, t: at, blocked: true }); }
       else if (h < 0.55 || !E.derived(s).B) {
-        var lost = Math.min(Math.round(s.coins * 0.05), Math.round(E.derived(s).B * 25)); s.coins -= lost;
+        var lost = Math.max(0, Math.min(Math.round(E.safeCoins(s.coins) * 0.05), Math.round(E.derived(s).B * 25))); s.coins = E.safeCoins(s.coins) - lost;
         e = logPush(s, { dir: 'in', rival: rv.id, t: at, steal: true, coins: lost });
       } else {
         var cand = D.BUILDINGS.filter(function (b) { return s.bld[b.id] > 0 && !s.raid.dmg[b.id]; });

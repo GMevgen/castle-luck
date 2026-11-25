@@ -10,8 +10,8 @@
     { id: 'cyber', name: 'Киберпанк', ready: true, desc: 'Неон, стальные плиты, квартал небоскрёбов, кредиты и голограмма ворона.' },
     { id: 'dark', name: 'Тёмное фэнтези', ready: true, desc: 'Мрачные руины, готика и холодный свет луны.' },
     { id: 'pencil', name: 'Карандаш', ready: true, desc: 'Чёрно-белая штриховка разорённого края с редкими пятнами цвета.' },
-    { id: 'cpencil', name: 'Цветные карандаши', ready: false, desc: 'Тёплый рисунок цветными карандашами.' },
-    { id: 'toon', name: 'Мультяшный', ready: false, desc: 'Яркая мультяшная долина: сочные цвета и круглые формы.' }
+    { id: 'cpencil', name: 'Цветные карандаши', ready: true, desc: 'Сказочная деревушка цветными карандашами: пуговицы, ларцы и радужный теремок.' },
+    { id: 'toon', name: 'Мультяшный', ready: true, desc: 'Яркая мультяшная долина: зелёные лужайки, ямки, ручей и толстые обводки.' }
   ];
   var BY = {}; LIST.forEach(function (t) { BY[t.id] = t; });
   function ls(k, v) { try { if (v === undefined) return root.localStorage.getItem(k); if (v === null) root.localStorage.removeItem(k); else root.localStorage.setItem(k, v); } catch (e) { return null; } }

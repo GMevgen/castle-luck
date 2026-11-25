@@ -19,13 +19,14 @@
     if (a < 100000) return grp(n);
     if (a < 1e6) return (n / 1e3).toFixed(a < 1e5 ? 1 : 0).replace('.', ',') + ' тыс';
     if (a < 1e9) return (n / 1e6).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' млн';
-    return (n / 1e9).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' млрд';
+    if (a < 1e12) return (n / 1e9).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' млрд';
+    return (n / 1e12).toFixed(2).replace(/\.?0+$/, '').replace('.', ',') + ' трлн';
   }
   /* v0.6: компактные числа для верхней панели: 9 999 · 12.5K · 125K · 1.2M · 3.4B */
   function fmtK(n) {
     n = Math.round(n || 0); var a = Math.abs(n), u = '', v = n;
     if (a < 10000) return grp(n);
-    if (a < 1e6) { v = n / 1e3; u = 'K'; } else if (a < 1e9) { v = n / 1e6; u = 'M'; } else { v = n / 1e9; u = 'B'; }
+    if (a < 1e6) { v = n / 1e3; u = 'K'; } else if (a < 1e9) { v = n / 1e6; u = 'M'; } else if (a < 1e12) { v = n / 1e9; u = 'B'; } else { v = n / 1e12; u = 'T'; }
     var av = Math.abs(v), s = av < 100 ? (Math.floor(av * 10) / 10).toFixed(1).replace(/\.0$/, '') : String(Math.floor(av));
     return (v < 0 ? '-' : '') + s + u;
   }
@@ -132,7 +133,6 @@
     if (r.chest != null) it.push('<div class="rw"><img src="' + D.CHESTS[r.chest].img + '">' + D.CHESTS[r.chest].name.split(' ')[0] + '</div>');
     var h = it.length ? '<div class="rewards">' + it.join('') + '</div>' : '';
     if (r.cards && r.cards.length) h += '<div class="mini-cards">' + r.cards.map(function (c, i) { return cardMini(c, i * 90); }).join('') + '</div>';
-    if (r.coinsLost) h += '<div class="bad small">Склад переполнен: потеряно ' + fmt(r.coinsLost) + ' монет. Улучшите Склад!</div>';
     if (r.chestToCoins) h += '<div class="muted small">Нет места для сундука — он превращён в монеты.</div>';
     return h;
   }
@@ -168,18 +168,18 @@
   function buildTop() {
     $('#top').innerHTML =
       '<button class="lvl" data-act="profile" id="tLvl"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none" stroke="rgba(0,0,0,.5)" stroke-width="4"/><circle id="tRing" cx="26" cy="26" r="24" fill="none" stroke="#7cc4ff" stroke-width="4" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="150.8"/></svg><span id="tLv">1</span></button>' +
-      resChip('coins', IC.coin, 'tCoins', 'tCoinsMax') + resChip('energy', IC.energy, 'tEnergy', 'tEnergyMax') +
+      resChip('coins', IC.coin, 'tCoins', '') + resChip('energy', IC.energy, 'tEnergy', 'tEnergyMax') +
       resChip('mana', IC.mana, 'tMana', 'tManaMax') + resChip('keys', IC.key, 'tKeys', 'tKeysMax') +
       '<button class="gear" data-act="settings" aria-label="Настройки">⚙</button>';
   }
   function resChip(k, ic, id, idMax) {
     return '<button class="res ' + k + '" data-act="resInfo" data-r="' + k + '" aria-label="' + RES_NAME[k] + '"><span class="ri"' + (k === 'energy' ? ' id="tERing"' : '') + '><img src="' + ic + '" alt=""></span>' +
-      '<span class="tx"><b class="v" id="' + id + '">0</b><span class="mx" id="' + idMax + '"></span></span></button>';
+      '<span class="tx"><b class="v" id="' + id + '">0</b>' + (idMax ? '<span class="mx" id="' + idMax + '"></span>' : '') + '</span></button>';
   }
   var RES_NAME = { coins: 'Монеты', energy: 'Энергия', mana: 'Мана', keys: 'Ключи' };
   function resInfo(k) {
     var d = E.derived(state, now()), t;
-    if (k === 'coins') t = 'Монеты: ' + grp(state.coins) + ' из ' + grp(d.maxCoins) + '. Вместимость растёт со Складом.';
+    if (k === 'coins') t = 'Монеты: ' + grp(state.coins) + '. Лимита нет — копите сколько угодно.';
     else if (k === 'energy') t = 'Энергия: ' + state.energy + ' из ' + d.maxEnergy + (state.energy >= d.maxEnergy ? '. Полная!' : '. +1 через ' + fmtTime(state.energyT + d.regenMs - Math.max(now(), state.time.high)));
     else if (k === 'mana') t = 'Мана: ' + state.mana + ' из ' + d.maxMana + '. Для заклинаний Башни архимага.';
     else t = 'Ключи: ' + state.keys + ' из ' + d.maxKeys + '. Открывают сундуки сразу. Связку расширяет Склад.';
@@ -190,7 +190,6 @@
     $('#tLv').textContent = state.level;
     $('#tRing').setAttribute('stroke-dashoffset', (150.8 * (1 - Math.min(1, state.xp / need))).toFixed(1));
     $('#tCoins').textContent = fmtK(state.coins - coinOffset);
-    $('#tCoinsMax').textContent = '/' + fmtK(d.maxCoins);
     $('#tEnergy').textContent = fmtK(state.energy);
     $('#tEnergyMax').textContent = '/' + fmtK(d.maxEnergy);
     var ep = state.energy >= d.maxEnergy ? 100 : 100 * (1 - Math.max(0, state.energyT + d.regenMs - Math.max(now(), state.time.high)) / d.regenMs);
@@ -432,7 +431,6 @@
     if (r.chest != null) parts.push(pill(D.CHESTS[r.chest].img, r.chestSlot >= 0 ? 'сундук!' : 'нет места'));
     if (r.horse) parts.push('<span class="pill">🍀 Подкова: ×2</span>');
     if (r.gold) parts.push('<span class="pill">✨×2</span>');
-    if (r.coinsLost) parts.push('<span class="pill bad">Склад полон!</span>');
     lastWin = parts.join(' ');
     if (onSlot) $('#winline').innerHTML = lastWin;
     var big = r.coins >= 12 * d.B * r.bet;
@@ -601,7 +599,7 @@
         if (!max) h += effRow('Нужен уровень игрока', D.citadelReqLevel(lvl + 1));
         break;
       case 'warehouse':
-        h += effRow('Макс. монет', fmt(a.maxCoins), nx(function (x) { return fmt(x.maxCoins); }));
+        h += effRow('Макс. ключей', a.maxKeys, nx(function (x) { return x.maxKeys; }));
         h += effRow('Макс. энергии', a.maxEnergy, nx(function (x) { return x.maxEnergy; })); break;
       case 'academy':
         h += effRow('1 энергия каждые', fmtTime(a.regenMs), nx(function (x) { return fmtTime(x.regenMs); }));
@@ -643,7 +641,7 @@
     }
     if (lvl < 1 && id !== 'citadel') return h;
     if (id === 'citadel') h += '<h3>Постройки замка</h3>' + D.BUILDINGS.filter(function (x) { return x.id !== 'citadel'; }).map(function (x) { return effRow(x.name, state.bld[x.id] + ' / ' + E.buildingCap(state, x.id)); }).join('');
-    if (id === 'warehouse') h += '<h3>Сейчас на складе</h3>' + effRow('Монеты', fmt(state.coins) + ' / ' + fmt(d.maxCoins)) + effRow('Энергия', state.energy + ' / ' + d.maxEnergy) + '<p class="small muted">Максимум энергии растёт только с уровнем Склада (100 + 15 за уровень). Монеты сверх лимита сгорают; энергия из наград может временно превышать максимум, но сама восстанавливается только до него.</p>';
+    if (id === 'warehouse') h += '<h3>Сейчас на складе</h3>' + effRow('Монеты', fmt(state.coins) + ' (без лимита)') + effRow('Энергия', state.energy + ' / ' + d.maxEnergy) + '<p class="small muted">Максимум энергии растёт только с уровнем Склада (100 + 15 за уровень). Монеты Склад не ограничивает — лимита золота нет; энергия из наград может временно превышать максимум, но сама восстанавливается только до него.</p>';
     if (id === 'academy') h += '<p class="small muted">Энергия и мана копятся даже при закрытой игре: время считается по часам устройства. Если перевести часы назад, восстановление приостановится, пока время не догонит.</p>';
     if (id === 'gallery') h += galleryPanel();
     if (id === 'market') h += marketPanel();

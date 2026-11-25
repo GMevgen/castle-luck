@@ -115,6 +115,7 @@
         else if (src[k] && typeof src[k] === 'object' && !Array.isArray(src[k]) && dst[k] && typeof dst[k] === 'object') fill(dst[k], src[k]);
       }
     })(o, fresh);
+    o.coins = E.safeCoins(o.coins);   // 0.7.1: монеты без лимита, но всегда конечное целое ≥ 0
     return o;
   };
   E.serialize = function (s) { return JSON.stringify(s); };
@@ -142,7 +143,7 @@
     var ev = E.currentEvent(t).ev.bonus;
     var d = {};
     d.B = D.baseCoin(s.level);
-    d.maxCoins = Math.round(10000 * Math.pow(2.2, b.warehouse - 1));
+    // 0.7.1: монеты без лимита (Склад их больше не ограничивает); MAX_COINS — только защита от переполнения точной арифметики
     d.maxEnergy = 100 + 15 * (Math.max(1, b.warehouse) - 1);   // v2: только Склад
     d.regenMs = Math.max(20000, 90000 * Math.pow(0.94, b.academy - 1) * (1 - cb.regen) * (1 - D.SKILL_BY_ID.stamina.per * sk.stamina) * (1 - (ev.regen || 0)));
     d.builders = D.builders(b.citadel);
@@ -173,9 +174,11 @@
   };
 
   /* ---------- начисления с ограничениями ---------- */
+  E.MAX_COINS = Number.MAX_SAFE_INTEGER;   // 0.7.1: лимита золота нет, только предел точных целых в JS (≈9 квадриллионов)
+  E.safeCoins = function (v) { v = Math.floor(Number(v)); return v > 0 ? Math.min(v, E.MAX_COINS) : 0; };
   function addCoins(s, n, d, out) {
-    n = Math.max(0, Math.round(n)); var room = Math.max(0, d.maxCoins - s.coins), got = Math.min(room, n);
-    s.coins += got; if (n > got) { s.stats.coinsLost += n - got; if (out) out.coinsLost = (out.coinsLost || 0) + n - got; }
+    n = Math.round(n); if (!(n > 0)) return 0;   // NaN/Infinity/отрицательные не начисляются
+    var got = Math.min(n, E.MAX_COINS - E.safeCoins(s.coins)); s.coins = E.safeCoins(s.coins) + got;
     return got;
   }
   function addMana(s, n, d) { var before = s.mana; s.mana = Math.min(d.maxMana, s.mana + Math.round(n)); return s.mana - before; }
@@ -504,7 +507,6 @@
     if (id === 'citadel' && s.level < D.citadelReqLevel(target)) return { ok: false, reason: 'Нужен ' + D.citadelReqLevel(target) + ' уровень игрока' };
     if ((s.builds || []).length >= D.BUILD_QUEUE_MAX) return { ok: false, reason: 'Очередь стройки заполнена', full: true };
     var cost = D.buildCost(id, target);
-    if (cost > d.maxCoins) return { ok: false, reason: 'Склад слишком мал для такой суммы', cost: cost };
     if (s.coins < cost) return { ok: false, reason: 'Не хватает монет', cost: cost, target: target };
     return { ok: true, cost: cost, target: target, ms: D.buildMinutes(target) * MIN * d.buildMul };
   };
