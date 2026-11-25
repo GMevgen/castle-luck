@@ -1,16 +1,12 @@
-/* 0.8 (бета) — интерфейс: гость-обменщик карт (все стили), а в «Мультяшном» — деревня уровня из 5 построек,
-   питомец-енот, раскопки-набег и анимации атаки / набега / купола на экране удачи. */
+/* 0.8–0.9 — интерфейс правил вращения во всех стилях: гость-обменщик карт, анимации атаки / набега / купола
+   на экране удачи и раскопки-набег. */
 (function () {
   'use strict';
   var CL = window.CL, D = CL.Data, E = CL.Engine, T = CL.V08, U = window.CLUI; if (!U || !T) return;
   function st() { return U.state; }
   var $ = function (s, r) { return (r || document).querySelector(s); };
-  var C = window.CLT = { old: false, on: function () { return T.on(st()); } };
-  if (CL.Theme && CL.Theme.id === 'toon') {   // редкости карт: обычная, редкая, золотая, чёрная
-    D.RARITY.E.name = 'Золотая'; D.RARITY.E.color = '#ffc21a'; D.RARITY.E.ink = '#a87400';
-    D.RARITY.L.name = 'Чёрная'; D.RARITY.L.color = '#2b2b33'; D.RARITY.L.ink = '#111';
-  }
-  function npc() { return C.on() ? { name: 'Енот-обменщик', img: 'img/extra/raccoon.webp' } : { name: D.CHARS.bruni.name, img: D.CHARS.bruni.img }; }
+  var C = window.CLT = { on: function () { return T.on(st()); } };
+  function npc() { return { name: D.CHARS.bruni.name, img: D.CHARS.bruni.img }; }
   function timer(end) { return '<span class="timer" data-end="' + end + '">' + U.fmtTime(end - U.now()) + '</span>'; }
 
   /* ================= гость-обменщик ================= */
@@ -36,39 +32,6 @@
   };
   U.ACT.xno = function () { T.decline(st(), U.now()); U.closeModal(); U.toast(npc().name + ' ушёл. Приходите завтра!', npc().img); U.refreshAll(); };
 
-  /* ================= деревня уровня ================= */
-  C.villageHTML = function () {
-    var s = st(), v = T.village(s), sum = v.b.reduce(function (a, b) { return a + b; }, 0), id = v.id;
-    var h = '<div class="tvil"><div class="tvhead"><div><b>' + v.name + '</b><span>Деревня ' + (v.i + 1) + '</span></div><span class="tstars">★ ' + s.toon.stars + '</span>' +
-      '<div class="tvprog"><i style="width:' + (sum / 20 * 100).toFixed(0) + '%"></i><em>' + sum + ' / 20</em></div></div><div class="tvscene">';
-    for (var j = 0; j < 5; j++) {
-      var k = v.b[j], c = T.cost(s, j, U.now());
-      h += '<div class="tvb p' + j + '"><div class="tvimg">' + (k < 4 ? '<img class="plot" src="img/extra/vil/' + id + '_5.webp" alt="">' : '') +
-        (k > 0 ? '<img class="bld s' + k + '" src="img/extra/vil/' + id + '_' + j + '.webp" alt="">' : '') + '</div>' +
-        '<div class="tvname">' + v.blds[j] + '</div><div class="tvst">' + '★★★★'.slice(0, k) + '<i>' + '★★★★'.slice(k) + '</i></div>' +
-        (k < 4 ? '<button class="tvbtn' + (s.coins >= c ? '' : ' no') + '" data-act="tBuild" data-j="' + j + '"><img src="' + U.IC.coin + '" alt="">' + U.fmtK(c) + '<small>★+' + (k + 1) + '</small></button>' : '<span class="tvok">✓</span>') + '</div>';
-    }
-    return h + '<button class="tvpet" data-act="tPet"><img src="img/extra/raccoon.webp" alt=""><span>Питомец · ур. ' + s.toon.pet.lv + '</span></button></div>' +
-      '<div class="row"><button class="btn sec sm grow" data-act="tOld">🏰 Хозяйство и сюжет</button></div></div>';
-  };
-  U.ACT.tBuild = function (d) {
-    var r = T.build(st(), +d.j, U.rng, U.now()); if (!r.ok) { U.toast(r.reason); return; }
-    U.S.coin && U.S.coin(); U.refreshAll();
-    var el = $('.tvb.p' + d.j); if (el) el.classList.add('pop');
-    if (r.done) { U.S.bigWin && U.S.bigWin(); U.showReward('«' + r.done + '» отстроена! Впереди новая деревня', r.reward, 'img/extra/vil/' + T.village(st()).id + '_0.webp'); }
-    else U.toast('Этап ' + r.stage + ' готов: +' + r.stars + ' ★');
-  };
-  U.ACT.tOld = function () { C.old = true; U.refreshAll(); };
-  /* ================= питомец ================= */
-  U.ACT.tPet = function () {
-    var p = st().toon.pet, L = D.TOON.pet.lv, next = L[p.lv + 1];
-    U.dialog('<img src="img/extra/raccoon.webp" style="width:96px"><h2>Енот-питомец · ур. ' + p.lv + '</h2>' +
-      '<p>+' + Math.round(D.TOON.pet.raid * p.lv * 100) + '% денежек в раскопках · ' + Math.round(D.TOON.pet.block * p.lv * 100) + '% шанс отбить налёт</p>' +
-      (next != null ? U.bar(p.xp - L[p.lv], next - L[p.lv]) : '<p><b>Максимальный уровень!</b></p>') + '<p class="small">Лакомств: <b>' + p.treats + '</b> (бывают в бочонках)</p>',
-      [{ t: '🍪 Покормить', act: 'tFeed' }, { t: 'Закрыть', act: 'close', cls: 'sec' }]);
-  };
-  U.ACT.tFeed = function () { var r = T.feed(st()); U.closeModal(); if (!r.ok) { U.toast(r.reason); return; } U.toast(r.up ? 'Енот вырос! Уровень ' + st().toon.pet.lv : 'Ням! Енот доволен', 'img/extra/raccoon.webp'); U.refreshAll(); U.ACT.tPet(); };
-
   /* ================= анимации на экране удачи и раскопки ================= */
   function fx(kind, img, text) {
     var app = $('#app'), el = document.createElement('div'); el.className = 'tfx ' + kind; el.innerHTML = '<img src="' + img + '" alt=""><b>' + text + '</b>';
@@ -78,11 +41,11 @@
   C.afterSpin = function (r, onSlot) {
     if (!C.on() || !onSlot) return;
     if (r.swordAttack > 0) fx('atk', 'img/sym/9.webp', 'АТАКА!');
-    if (r.toonShield) fx('shd', 'img/sym/5.webp', '+1 КУПОЛ');
-    if (r.toonRaid) { U.setAuto(false); fx('raid', 'img/sym/4.webp', 'НАБЕГ!'); setTimeout(C.openDig, 1200); }
+    if (r.shieldWin) fx('shd', 'img/sym/5.webp', '+1 КУПОЛ');
+    if (r.raidDig) { U.setAuto(false); fx('raid', 'img/sym/4.webp', 'НАБЕГ!'); setTimeout(C.openDig, 1200); }
   };
   C.openDig = function () {
-    var g = st().toon.dig; if (!g || $('.tdig')) return;
+    var g = st().dig; if (!g || $('.tdig')) return;
     var r0 = D.RIVAL_BY_ID[g.rival] || {}, rv = { name: ((D.CHARS[r0.who] || {}).name || 'сосед') + (r0.village ? ', ' + r0.village : '') }, el = document.createElement('div'); el.className = 'tdig';
     el.innerHTML = '<div class="tdbox"><h2>Набег!</h2><p>Копаем у: <b>' + rv.name + '</b></p><p class="tdl">Лопат: <b id="tdLeft">' + g.left + '</b> из 3</p><div class="tdholes">' +
       [0, 1, 2, 3].map(function (i) { return '<button class="hole' + (g.open[i] ? ' open' : '') + '" data-i="' + i + '"><span>⛏</span></button>'; }).join('') +

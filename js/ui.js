@@ -198,7 +198,7 @@
     $('#tManaMax').textContent = '/' + fmtK(d.maxMana);
     $('#tKeys').textContent = fmtK(state.keys);
     $('#tKeysMax').textContent = '/' + fmtK(d.maxKeys);
-    var n = E.notifications(state, now()); $('#top').classList.toggle('has-new', !!n.quests); updateDeco();
+    var n = E.notifications(state, now()); $('#top').classList.toggle('has-new', !!n.quests);
     setBadge('castle', n.castle); setBadge('quests', n.quests); setBadge('events', n.events);
   }
   function setBadge(id, n) { var b = $('#nav [data-to="' + id + '"] .badge'); if (!b) return; b.textContent = n; b.classList.toggle('hidden', !n); }
@@ -208,7 +208,6 @@
     $('#nav').innerHTML = items.map(function (it) { return '<button data-act="go" data-to="' + it[0] + '" class="' + (screen === it[0] ? 'on' : '') + '"><img src="' + it[2] + '"><span>' + it[1] + '</span><span class="badge hidden">0</span></button>'; }).join('');
   }
   function go(to) {
-    if (window.CLT) CLT.old = false;
     if (spinning && to !== 'slot') { auto = false; }
     if (to !== 'castle' && iso) { iso.destroy(); iso = null; }
     screen = to; buildNav(); renderScreen(); updateTop(); $('#screen').scrollTop = 0;
@@ -218,7 +217,6 @@
     el.classList.toggle('iso-mode', screen === 'castle');
     if (screen !== 'castle' && iso) { iso.destroy(); iso = null; }
     if (screen === 'slot') { el.innerHTML = renderSlot(); mountSlot(); }
-    else if (screen === 'castle' && window.CLT && CLT.on() && !CLT.old) { if (iso) { iso.destroy(); iso = null; } el.classList.remove('iso-mode'); el.innerHTML = CLT.villageHTML(); }
     else if (screen === 'castle') { if (iso && iso.alive() && $('#isoHud')) updateCastle(); else { el.innerHTML = renderCastle(); mountCastle(); } }
     else if (screen === 'cards') el.innerHTML = renderCards();
     else if (screen === 'quests') el.innerHTML = renderQuests();
@@ -241,39 +239,17 @@
     return '<div class="slot"><div class="bgimg" style="background-image:url(img/ui/castle_bg.webp)"></div>' +
       '<button class="evstrip" data-act="go" data-to="events"><img src="' + ce.ev.banner + '"><div class="grow" style="text-align:left"><b>' + ce.ev.name + '</b><div class="small muted">' + ce.ev.bonusText + '</div></div><span class="pill">' + timerSpan(ce.end) + '</span></button>' +
       evBarHTML(ce) + (window.CLX ? CLX.slotBarHTML() : '') +
-      (slotDeco() ? decoTop(ce) : '') +
       '<div class="machine"><div class="title">✦ Колесо Судьбы ✦</div><div class="reels" id="reels">' +
       [0, 1, 2].map(function (i) { return '<div class="reel" id="reel' + i + '"><div class="strip" id="strip' + i + '">' + stripHTML() + '</div><div class="hl"></div></div>'; }).join('') +
       '<div class="payline"></div></div></div>' +
-      (slotDeco() ? '<div class="tdeco tenergy"><div class="trk"><i id="tEnFill"></i><b id="tEnTxt"></b></div><div class="plank" id="tEnNext"></div></div>' : '') +
       '<div class="winline" id="winline">' + (lastWin || '<span class="muted">Потяните рычаг судьбы — нажмите «Крутить»</span>') + '</div>' +
       '<div class="spells-active" id="spellsActive"></div>' +
-      '<div class="controls">' + (slotDeco() ? '<button class="tdeco tcards" data-act="go" data-to="cards" aria-label="Карты"><img src="img/extra/cards.webp" alt=""></button>' : '') + '<div class="betbox"><span class="small muted">Ставка</span><span class="val" id="betVal">×1</span><div class="arrows"><button data-act="bet" data-d="-1" aria-label="меньше">−</button><button data-act="bet" data-d="1" aria-label="больше">+</button></div></div>' +
+      '<div class="controls">' + '<div class="betbox"><span class="small muted">Ставка</span><span class="val" id="betVal">×1</span><div class="arrows"><button data-act="bet" data-d="-1" aria-label="меньше">−</button><button data-act="bet" data-d="1" aria-label="больше">+</button></div></div>' +
       '<button class="spinbtn" id="spinBtn" data-act="spin">КРУТИТЬ<small id="spinCost"></small></button>' +
       '<div class="side"><button class="toggle" id="autoBtn" data-act="auto">АВТО</button><button class="toggle" id="turboBtn" data-act="turbo">ТУРБО</button></div></div>' +
       '<div class="row"><button class="btn sec sm grow" data-act="spells">✨ Заклинания</button><button class="btn sec sm grow" data-act="paytable">📜 Выплаты</button></div>' + (window.CLX ? CLX.slotButtonsHTML() : '') +
       '<div class="chests" id="chests"></div>' +
       '</div>';
-  }
-  /* 0.7.2: украшения экрана удачи (видны только в стилях, где тема их включает, — «Мультяшный»):
-     табличка игрока на крыше автомата, банка с таймером события, енот-обменщик, щенок-проводник */
-  function slotDeco() { return !!(window.CL && CL.Theme && CL.Theme.iso && CL.Theme.iso('slotDeco', false)); }
-  function decoTop(ce) {
-    var h = D.HEROES[state.hero.g] || D.HEROES.m;
-    return '<div class="tdeco troof"><img class="roofimg" src="img/extra/roof.webp" alt="">' +
-      '<button class="tjar" data-act="go" data-to="events"><img src="img/extra/jar.webp" alt=""><span class="tag">' + timerSpan(ce.end) + '</span></button>' +
-      '<div class="tplate"><img src="' + h.img + '" alt=""><div class="tpt"><b>' + esc(h.name).toUpperCase() + '</b><span><img src="' + IC.coin + '" alt=""><i id="tPlCoins"></i></span></div><em id="tPlBet">Х 1</em></div>' +
-      '<img class="twand" src="img/extra/wand.webp" alt="">' +
-      '<span class="tshd" id="tShd"></span><button class="trac" data-act="xch"><img src="img/extra/raccoon.webp" alt=""><span class="plank">ОБМЕНЯТЬ</span></button></div>' +
-      '<img class="tdeco tpup" src="img/guide/raven.webp" alt="">';
-  }
-  function updateDeco() {
-    var c = $('#tPlCoins'); if (!c) return;
-    var d = E.derived(state, now()); c.textContent = grp(state.coins - coinOffset); $('#tShd').textContent = '🛡×' + state.raid.shields; $('#tPlBet').textContent = 'Х ' + state.bet;
-    $('#tEnTxt').textContent = state.energy + '/' + d.maxEnergy;
-    $('#tEnFill').style.width = Math.min(100, state.energy / d.maxEnergy * 100).toFixed(1) + '%';
-    var left = state.energyT + d.regenMs - Math.max(now(), state.time.high);
-    $('#tEnNext').textContent = state.energy >= d.maxEnergy ? 'Энергия полная' : '+1 энергия через ' + fmtTime(left);
   }
   /* ---------- шкала предметов события (единственное место, где видны предметы) ---------- */
   function evBarHTML(ce) {
@@ -985,9 +961,10 @@
   function genderDialog(first) {
     var cards = ['m', 'f'].map(function (g) { var h = D.HEROES[g];
       return '<button class="gcard' + (state.hero.g === g && !first ? ' on' : '') + '" data-act="setGender" data-g="' + g + '"><img src="' + h.img + '" alt=""><b>' + h.name + '</b><span>' + h.label + '</span></button>'; }).join('');
-    var m = dialog('<div class="gender"><h2>' + (first ? 'Кто унаследовал замок?' : 'Ваш герой') + '</h2><p class="small">' + (first ? 'Дед оставил Вальдмор внуку… или внучке? Выберите, за кого играть — сменить можно в любой момент в Настройках.' : 'Диалоги и обращения жителей подстроятся под выбор. Прогресс не меняется.') + '</p><div class="gpick">' + cards + '</div></div>',
+    var m = dialog('<div class="gender"><h2>' + (first ? 'Кто унаследовал замок?' : 'Ваш герой') + '</h2><p class="small">' + (first ? 'Дед оставил Вальдмор внуку… или внучке? Введите имя и выберите, за кого играть — сменить можно в любой момент в Настройках.' : 'Диалоги и обращения жителей подстроятся под выбор. Прогресс не меняется.') + '</p>' +
+      '<label class="gname">Имя <input id="heroName" maxlength="16" autocomplete="off" placeholder="' + esc(D.HEROES[state.hero.g].name) + '" value="' + esc(state.hero.name || '') + '"></label><div class="gpick">' + cards + '</div></div>',
       first ? [] : [{ t: 'Назад к настройкам', act: 'backSettings', cls: 'sec' }]);
-    if (first) m.onClose = function () { if (!state.hero.chosen) { state.hero.chosen = true; save(); } dequeue(); };
+    if (first) m.onClose = function () { if (!state.hero.chosen || !state.hero.named) { state.hero.chosen = true; state.hero.named = true; save(); } dequeue(); };
     return m;
   }
   /* ---------- v0.6: обучение с вороном Карром ---------- */
@@ -1003,7 +980,7 @@
     { sel: '#chests', t: 'Сундуки', x: 'Сюда падают сундуки с барабанов. Нажми на сундук, чтобы начать отпирание по таймеру, или открой его ключами прямо сейчас. Внутри монеты, энергия, а иногда и карты.' },
     { sel: '#evbar', t: 'Шкала события', x: 'Во время праздников с барабанов падают особые предметы. Они наполняют шкалу над Колесом, а за каждый этап — подарок. Каждый праздник — свой предмет.' },
     { sel: '#dbar', t: 'Дневной сбор', x: 'А это — сбор дня. Каждый день духи долины прячут в барабанах свой предмет — банки светлячков, жёлуди, перья, фонарики… Какой сегодня — видно на значке слева. Собирай — на 100 штук дадут 100 энергии, на 1 000 — тысячу, и так до 50 000! В полночь всё начинается заново, с новым предметом.' },
-    { sel: '[data-act="miniMenu"]', t: 'Мини-игры', x: 'Когда надоест крутить — сюда. «Поиск» (5 попыток в день, энергия и шанс на ультраредкую карту), «Бегущий ворон» — это я, между прочим, лечу по трём дорожкам за монетками-мини, и «Магический сапёр» 9×9. Монетки-мини тратятся в мини-лавке.' },
+    { sel: '[data-act="miniMenu"]', t: 'Мини-игры', x: 'Когда надоест крутить — сюда. «Поиск» (5 попыток в день, энергия и шанс на ультраредкую карту), и «Магический сапёр» 9×9. Монетки-мини за «Поиск» тратятся в мини-лавке.' },
     { sel: '#reels', t: 'Меч', x: '<img src="img/sym/9.webp" style="width:44px;float:left;margin:0 8px 4px 0;border-radius:10px">Новый символ на барабанах — меч. Два меча на линии — атака на соседа, три меча — сразу две! Как выпадут, я покажу всех четырёх соседей: уровень замка, казна, есть ли щит. Выбирай, к кому в гости.' },
     { sel: '[data-act="raids"]', t: 'Набеги', x: 'Дальше — деревня соседа: коснись постройки, и меч ударит по ней. Удар уносит десятую часть его казны, разрушение — больше и ещё 2 печати. Поднятый щит 🛡 примет первый удар на себя. Соседи бьют в ответ, но твои щиты (каждые 30 вращений) держат удар, журнал помнит обидчиков, а «Отомстить» проходит сквозь любой щит и даёт ×1,5.' },
     { sel: '#tLvl', t: 'Уровень', x: 'Кольцо вокруг цифры — опыт до следующего уровня. Новый уровень открывает ставки, постройки и коллекции. Нажми — увидишь свою летопись.' },
@@ -1066,7 +1043,7 @@
       '<button class="btn sec wide" data-act="turbo">' + (s.turbo ? '⚡ Турбо-вращение: вкл' : '⚡ Турбо-вращение: выкл') + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="mapFx">🏮 Анимация карты: ' + ({ high: 'полная', low: 'экономная', off: 'выкл' })[s.mapFx || 'high'] + '</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="toggleResidents">' + (s.residents === false ? '🎬 Катсцены у построек: выкл' : '🎬 Катсцены у построек: вкл') + '</button><div style="height:8px"></div>' +
-      '<button class="btn sec wide" data-act="gender">' + (state.hero.g === 'f' ? '👩' : '👦') + ' ' + D.HEROES[state.hero.g].label + ': ' + D.HEROES[state.hero.g].name + ' — сменить</button><div style="height:8px"></div>' +
+      '<button class="btn sec wide" data-act="gender">' + (state.hero.g === 'f' ? '👩' : '👦') + ' ' + D.HEROES[state.hero.g].label + ': ' + esc(D.CHARS.hero.name) + ' — сменить</button><div style="height:8px"></div>' +
       (window.CLV07 ? CLV07.settingsHTML() : '') +
       '<button class="btn sec wide" data-act="tutorial">🐦‍⬛ Обучение с вороном — пройти снова</button><div style="height:8px"></div>' +
       '<button class="btn sec wide" data-act="paytable">📜 Выплаты и RTP</button><div style="height:8px"></div>' +
@@ -1135,8 +1112,9 @@
     resInfo: function (d) { resInfo(d.r); },
     gender: function () { closeModal(); genderDialog(false); },
     setGender: function (d) {
-      var first = !state.hero.chosen; state.hero.g = d.g === 'f' ? 'f' : 'm'; state.hero.chosen = true; D.setHero(state.hero.g); saveNow(); S.click();
-      closeModal(); if (!first) { toast((state.hero.g === 'f' ? 'Героиня' : 'Герой') + ': ' + D.HEROES[state.hero.g].name + '. Диалоги теперь обращаются к вам как к ' + (state.hero.g === 'f' ? 'миледи' : 'милорду') + '.', D.HEROES[state.hero.g].img); settingsDialog(); }
+      var first = !state.hero.chosen || !state.hero.named, ni = $('#heroName'); state.hero.g = d.g === 'f' ? 'f' : 'm'; state.hero.chosen = true; state.hero.named = true;
+      if (ni) state.hero.name = D.cleanName(ni.value); D.setHero(state.hero.g, state.hero.name); saveNow(); S.click();
+      closeModal(); if (!first) { toast((state.hero.g === 'f' ? 'Героиня' : 'Герой') + ': ' + D.CHARS.hero.name + '. Диалоги теперь обращаются к вам как к ' + (state.hero.g === 'f' ? 'миледи' : 'милорду') + '.', D.HEROES[state.hero.g].img); settingsDialog(); }
     },
     tutorial: function () { closeAllModals(); startTutorial(); },
     toggleResidents: function () { state.settings.residents = state.settings.residents === false; save(); closeModal(); settingsDialog(); },
@@ -1246,7 +1224,7 @@
   /* ---------- запуск ---------- */
   function boot() {
     var src = load(), before = { energy: state.energy, mana: state.mana, high: state.time.high };
-    D.setHero(state.hero.g);
+    D.setHero(state.hero.g, state.hero.name);
     S.setEnabled(state.settings.sound);
     var evs = E.tick(state, now());
     state.chests.forEach(function (c, i) { readyChests[i] = !!(c && c.end && state.time.high >= c.end); });
@@ -1259,7 +1237,7 @@
     if (src === 'backup') toast('Основное сохранение повреждено — загружена резервная копия');
     if (state.time.rollback) toast('Часы устройства переведены назад — восстановление на паузе', IC.energy);
     if (window.__skipIntro) { state.scenes.queue = []; state.hero.chosen = true; state.tut.done = true; state.tut.news = false; state.tut.x2 = true; state.tut.x3 = true; state.themeAsked = true; state.seenVer = D.APP_VERSION; }
-    if (!state.hero.chosen) enqueue(function () { genderDialog(true); });   // v0.6: сначала — кто унаследовал замок
+    if (!state.hero.chosen || !state.hero.named) enqueue(function () { genderDialog(true); });   // 0.9: и один раз для старых сохранений — ввести имя   // v0.6: сначала — кто унаследовал замок
     if (window.CLV07) CLV07.onBoot(src);   // 0.7: «Что нового» и выбор стиля оформления (после выбора героя)
     pumpScenes();
     handleTickEvents(evs);

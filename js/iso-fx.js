@@ -34,7 +34,7 @@
   function AMB() { try { return (CL.Theme && CL.Theme.fx('ambient')) || ''; } catch (e) { return ''; } }
   function NEON() { return AMB() === 'neon'; }
   /* фаза B: «gloom» (тёмное фэнтези) — блуждающие огоньки, туман, летучие мыши; «ash» (карандаш) — дым и пепел, вороны;
-     «paper» (цветные карандаши) — воздушные шарики, бабочки; «toon» (мультяшный) — шарики, бабочки, пухлые облака с обводкой */
+     «paper» (цветные карандаши) — воздушные шарики, бабочки */
   function mist(seed, w, h, c0, c1, n) {
     var c = cnv(w, h), g = c.getContext('2d'), s = seed;
     function r2() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
@@ -61,15 +61,6 @@
     g.beginPath(); g.ellipse(24, 26, 11, 14, 0, 0, TAU); var b = g.createRadialGradient(20, 21, 1, 24, 26, 15); b.addColorStop(0, '#ffffff'); b.addColorStop(0.35, fill); b.addColorStop(1, edge); g.fillStyle = b; g.fill();
     if (outline) { g.lineWidth = 2; g.strokeStyle = '#2a2a2a'; g.stroke(); }
     g.fillStyle = edge; g.beginPath(); g.moveTo(21, 41); g.lineTo(27, 41); g.lineTo(24, 38); g.fill();
-    return c;
-  }
-  function toonCloud(seed, w, h) { // пухлое мультяшное облако с тёмной обводкой
-    var c = cnv(w, h), g = c.getContext('2d'), s = seed, B = [];
-    function r2() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
-    for (var i = 0; i < 6; i++) B.push([w * (0.2 + 0.6 * i / 5), h * (0.5 + 0.12 * (r2() - 0.5)), h * (0.18 + 0.14 * r2())]);
-    g.fillStyle = '#2b3a55'; B.forEach(function (b) { g.beginPath(); g.arc(b[0], b[1], b[2] + 3, 0, TAU); g.fill(); });
-    g.fillStyle = '#ffffff'; B.forEach(function (b) { g.beginPath(); g.arc(b[0], b[1], b[2], 0, TAU); g.fill(); });
-    g.fillStyle = '#dbe9ff'; B.forEach(function (b) { g.beginPath(); g.arc(b[0] + b[2] * 0.15, b[1] + b[2] * 0.35, b[2] * 0.6, 0, Math.PI); g.fill(); });
     return c;
   }
   function smog(seed, w, h) {
@@ -125,11 +116,11 @@
               shadows: [cloud(3, 130, 55, true), cloud(11, 150, 60, true), cloud(29, 110, 50, true)] };
       return SPR;
     }
-    if (A === 'paper' || A === 'toon') {
-      var ol = A === 'toon', cols = [['#ff6b6b', '#c0392b'], ['#ffd93d', '#d4a017'], ['#6bcBff', '#2a7fc0'], ['#8be37b', '#3c9a2f'], ['#c38bff', '#7a3fc0']];
+    if (A === 'paper') {
+      var ol = false, cols = [['#ff6b6b', '#c0392b'], ['#ffd93d', '#d4a017'], ['#6bcBff', '#2a7fc0'], ['#8be37b', '#3c9a2f'], ['#c38bff', '#7a3fc0']];
       SPR = { flock: 'bird', lamp: null, fairy: [glow(16, '255,200,120'), glow(16, '255,160,220'), glow(16, '160,220,255')], spark: glow(8, '255,250,210', 1),
               ember: glow(8, '255,190,80', 1), balloons: cols.map(function (c) { return balloon(c[0], c[1], ol); }), fairyMode: 'butterfly',
-              clouds: ol ? [toonCloud(3, 260, 110), toonCloud(11, 300, 120), toonCloud(29, 220, 100)] : [cloud(3, 260, 110), cloud(11, 300, 120), cloud(29, 220, 100)],
+              clouds: [cloud(3, 260, 110), cloud(11, 300, 120), cloud(29, 220, 100)],
               shadows: [cloud(3, 130, 55, true), cloud(11, 150, 60, true), cloud(29, 110, 50, true)] };
       SPR.lantern = SPR.balloons[0];
       return SPR;

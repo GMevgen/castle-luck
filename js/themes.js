@@ -8,16 +8,14 @@
   var LIST = [
     { id: 'anime', name: 'Аниме', ready: true, desc: 'Тёплая акварель, замок, долина и ворон Карр. Стиль по умолчанию.' },
     { id: 'cyber', name: 'Киберпанк', ready: true, desc: 'Неон, стальные плиты, квартал небоскрёбов, кредиты и голограмма ворона.' },
-    { id: 'dark', name: 'Тёмное фэнтези', ready: true, desc: 'Мрачные руины, готика и холодный свет луны.' },
-    { id: 'pencil', name: 'Карандаш', ready: true, desc: 'Чёрно-белая штриховка разорённого края с редкими пятнами цвета.' },
-    { id: 'toon', name: 'Мультяшный', ready: true, desc: 'Яркая мультяшная долина: зелёные лужайки, ямки, ручей и толстые обводки.' }
+    { id: 'pencil', name: 'Карандаш', ready: true, desc: 'Чёрно-белая штриховка разорённого края с редкими пятнами цвета.' }
   ];
   var BY = {}; LIST.forEach(function (t) { BY[t.id] = t; });
   function ls(k, v) { try { if (v === undefined) return root.localStorage.getItem(k); if (v === null) root.localStorage.removeItem(k); else root.localStorage.setItem(k, v); } catch (e) { return null; } }
   function valid(id) { return !!(id && BY[id] && BY[id].ready); }
   var q = (root.location && /[?&]theme=([a-z]+)/.exec(root.location.search)) || null;   // для тестов/скриншотов: ?theme=cyber
   /* 0.7.2: удалённые стили → замена (cpencil «Цветные карандаши» → pencil «Карандаш») */
-  var GONE = { cpencil: 'pencil' };
+  var GONE = { cpencil: 'pencil', toon: 'anime', dark: 'anime' };   // 0.9: «Мультяшный» и «Тёмное фэнтези» удалены
   if (GONE[ls(KEY)]) ls(KEY, GONE[ls(KEY)]);
   var id = q && valid(q[1]) ? q[1] : ls(KEY);
   if (!valid(id)) id = 'anime';

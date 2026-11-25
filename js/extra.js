@@ -17,7 +17,7 @@
      Энергия за этапы 100…50 000 возвращает не больше ~90% потраченной на них энергии — бесконечной «фермы» нет. */
   D.DAILY_DROP = { w: [66, 24, 6, 4], v: [0, 1, 2, 4] };
   D.ENERGY_HARD_CAP = 99999;
-  D.MINI = { searchTries: 5, sweepTries: 3, runCoinCap: 400, searchTime: 45, searchFind: 5 };
+  D.MINI = { searchTries: 5, sweepTries: 3, searchTime: 45, searchFind: 5 };
   D.MINI_SHOP = [
     { id: 'en', name: 'Энергия', ico: 'energy', energy: 25, price: 60, day: 5 },
     { id: 'mana', name: 'Кристаллы маны', ico: 'mana', mana: 40, price: 50, day: 5 },
@@ -48,7 +48,7 @@
   E.newState = function (now) {
     var s = _new(now);
     s.dbar = { day: null, n: 0, got: 0 };
-    s.mini = { day: null, search: 0, sweep: 0, runCoins: 0, coins: 0, shop: {}, sw: null, best: 0 };
+    s.mini = { day: null, search: 0, sweep: 0, coins: 0, shop: {}, sw: null, best: 0 };
     s.raid = { charges: 1, shields: 1, spinN: 0, log: [], dmg: {}, nextT: now + 8 * H, seq: 0 };
     s.chain = { n: 1, k: 0, base: null };
     s.stats.raids = 0; s.stats.miniPlays = 0; s.stats.dailyItems = 0; s.stats.chainSteps = 0;
@@ -181,8 +181,8 @@
   };
 
   /* ---------- мини-игры ---------- */
-  function miniDay(s, t) { var k = today(s, t); if (s.mini.day !== k) { s.mini.day = k; s.mini.search = 0; s.mini.sweep = 0; s.mini.runCoins = 0; s.mini.shop = {}; } return s.mini; }
-  X.mini = function (s, t) { var m = miniDay(s, t); return { search: D.MINI.searchTries - m.search, sweep: D.MINI.sweepTries - m.sweep, runLeft: D.MINI.runCoinCap - m.runCoins, coins: m.coins }; };
+  function miniDay(s, t) { var k = today(s, t); if (s.mini.day !== k) { s.mini.day = k; s.mini.search = 0; s.mini.sweep = 0; s.mini.shop = {}; } return s.mini; }
+  X.mini = function (s, t) { var m = miniDay(s, t); return { search: D.MINI.searchTries - m.search, sweep: D.MINI.sweepTries - m.sweep, coins: m.coins }; };
   /* Поиск: попытка списывается при старте */
   X.searchStart = function (s, t) { var m = miniDay(s, t); if (m.search >= D.MINI.searchTries) return { ok: false, reason: 'Попытки на сегодня закончились — приходите завтра' }; m.search++; s.stats.miniPlays++; return { ok: true }; };
   X.searchFinish = function (s, found, total, rng, t) {
@@ -191,13 +191,8 @@
     r.cards = r.cards || [];
     if (all && rng.chance(0.04)) r.cards.push(E.rollCard(s, rng, 'L', 0, t));        // ультраредкая (легендарная) карта
     else if (found >= 3 && rng.chance(0.03)) r.cards.push(E.rollCard(s, rng, 'E', 0, t));
+    r.mini = 12 * found + (all ? 20 : 0); var m = miniDay(s, t); m.coins += r.mini;   // 0.9: монетки-мини теперь из «Поиска» (раньше — «Бегущий ворон», ≤400 в день)
     r.found = found; r.all = all; return r;
-  };
-  /* Бегущий ворон: монетки-мини копятся на счёте, не больше D.MINI.runCoinCap в день */
-  X.runFinish = function (s, coins, t) {
-    var m = miniDay(s, t), got = Math.max(0, Math.min(coins | 0, D.MINI.runCoinCap - m.runCoins));
-    m.runCoins += got; m.coins += got; m.best = Math.max(m.best || 0, coins | 0); s.stats.miniPlays++;
-    return { ok: true, got: got, capped: got < (coins | 0) };
   };
   X.shopBuy = function (s, id, rng, t) {
     var it = D.MINI_SHOP.filter(function (x) { return x.id === id; })[0]; if (!it) return { ok: false };

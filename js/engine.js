@@ -40,7 +40,7 @@
       story: { ch: 1, base: {}, seen: 0, finished: false },
       ach: {}, event: { inst: -1, items: 0, stage: 0 },
       bet: 1, settings: { sound: true, turbo: false },
-      hero: { g: 'm', chosen: false },        // v0.6: пол героя (выбирается при первом запуске)
+      hero: { g: 'm', chosen: false, name: '', named: false },   // 0.9: имя персонажа (named — экран создания уже показан)        // v0.6: пол героя (выбирается при первом запуске)
       tut: { done: false, step: 0, news: false },   // v0.6: обучение с вороном
       pity: { since: 0, target: null },       // скрытый счётчик джекпота (в интерфейсе не показывается)
       builds: [],                             // очередь строительства
@@ -107,7 +107,9 @@
       o = E.MIGRATIONS[v](o, now); v = o.v;
     }
     if (v > D.SAVE_VERSION) throw new Error('Сохранение из более новой версии игры (' + v + ')');
-    if (o.theme === 'cpencil') o.theme = 'pencil';   // 0.7.2: стиль «Цветные карандаши» удалён → «Карандаш»
+    if (o.theme === 'cpencil') o.theme = 'pencil';
+    if (o.theme === 'toon' || o.theme === 'dark') o.theme = 'anime';   // 0.9: стили удалены → «Аниме»
+    if (o.toon) { if (o.toon.dig && !o.dig) o.dig = o.toon.dig; delete o.toon; }   // 0.9: деревни 0.8 и питомец удалены, раскопки остаются
     // дозаполнение недостающих полей (forward-compatible)
     var fresh = E.newState(now);
     (function fill(dst, src) {

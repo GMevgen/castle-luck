@@ -1,4 +1,4 @@
-/* Замок удачи 0.6 (бета), часть 2 — интерфейс: дневной сбор, мини-игры (Поиск, Бегущий ворон, Магический сапёр),
+/* Замок удачи 0.6 (бета), часть 2 — интерфейс: дневной сбор, мини-игры (Поиск, Магический сапёр),
    мини-лавка, набеги на соседей и журнал, цепочки заданий глав. Использует помощники window.CLUI из ui.js. */
 (function () {
   var U = window.CLUI, CL = window.CL, D = CL.Data, E = CL.Engine, X = CL.Extra;
@@ -153,8 +153,7 @@
   function miniHTML() {
     var m = X.mini(st(), U.now());
     var tile = function (act, img, name, sub, txt) { return '<button class="mtile" data-act="' + act + '"><img src="' + img + '" alt=""><div class="grow"><b>' + name + '</b><div class="small ok">' + sub + '</div><div class="small muted">' + txt + '</div></div></button>'; };
-    return tile('mSearch', 'img/story/6.webp', '🔍 Поиск', 'Попыток сегодня: ' + m.search + ' из ' + D.MINI.searchTries, 'Найдите 5 предметов на картинке за ' + D.MINI.searchTime + ' с. Энергия и редкий шанс на ультраредкую карту.') +
-      tile('mRun', 'img/guide/raven.webp', '🐦‍⬛ Бегущий ворон', 'Монеток-мини сегодня ещё: ' + m.runLeft, 'Ворон летит по трём дорожкам: уворачивайтесь от туч и шпилей, собирайте монетки-мини и бонусы.') +
+    return tile('mSearch', 'img/story/6.webp', '🔍 Поиск', 'Попыток сегодня: ' + m.search + ' из ' + D.MINI.searchTries, 'Найдите 5 предметов на картинке за ' + D.MINI.searchTime + ' с. Энергия, монетки-мини и редкий шанс на ультраредкую карту.') +
       tile('mSweep', 'img/sym/5.webp', '💣 Магический сапёр', 'Партий сегодня: ' + m.sweep + ' из ' + D.MINI.sweepTries, 'Поле 9×9: бонусы копятся в котелке, мина забирает 75%. Откройте всё — котелок ×2.') +
       '<h3 style="margin:14px 0 6px">Мини-лавка · <img src="img/daily/6.webp" style="width:20px;vertical-align:-4px"> ' + m.coins + ' монеток-мини</h3>' +
       D.MINI_SHOP.map(function (it) {
@@ -194,7 +193,7 @@
     function finish() {
       if (done) return; done = true; clearInterval(timer); el.remove();
       var r = X.searchFinish(st(), nf, targets.length, U.rng, U.now());
-      result(r.all ? 'Всё найдено!' : 'Найдено ' + nf + ' из ' + targets.length, r, 'img/guide/raven.webp', r.cards && r.cards.length ? 'Ультраредкая находка — карта!' : null);
+      result((r.all ? 'Всё найдено!' : 'Найдено ' + nf + ' из ' + targets.length) + (r.mini ? ' +' + r.mini + ' монеток-мини' : ''), r, 'img/guide/raven.webp', r.cards && r.cards.length ? 'Ультраредкая находка — карта!' : null);
       (r.cards || []).forEach(function (k) { U.cardPop(k); });
     }
     el.addEventListener('click', function (e) {
@@ -204,84 +203,6 @@
       if (i < targets.length && !found[i]) { found[i] = 1; nf++; h.classList.add('got'); $('.st[data-t="' + i + '"]', el).classList.add('got'); $('#sFound', el).textContent = nf + '/' + targets.length; U.S.coin(); if (nf >= targets.length) setTimeout(finish, 500); }
       else if (i >= targets.length) { left = Math.max(1, left - 3); h.classList.remove('miss'); void h.offsetWidth; h.classList.add('miss'); U.S.error(); }
     });
-  }
-
-  /* ---------- Бегущий ворон ---------- */
-  function runnerGame() {
-    var el = overlay('mg-run', '<div class="mgh"><b>🐦‍⬛ Бегущий ворон</b><span id="rCoins" class="pill">0</span><span id="rBuf" class="pill hidden"></span><button class="btn sec sm" data-x="quit">✕</button></div>' +
-      '<canvas id="rc"></canvas><div class="rhint" id="rHint">Свайп или касание слева/справа — смена дорожки. Стрелки ← → на ПК. Начать — касание!</div>');
-    var cv = $('#rc', el), g = cv.getContext('2d'), raven = new Image(); raven.src = 'img/guide/raven.webp';
-    var coinImg = new Image(); coinImg.src = 'img/daily/6.webp';
-    var W, H, dpr = Math.min(2, window.devicePixelRatio || 1);
-    function size() { var r = cv.getBoundingClientRect(); W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }
-    size();
-    var lane = 1, lx = 1, objs = [], coins = 0, speed = 260, t = 0, spawn = 0, shield = 0, magnet = 0, alive = true, started = false, last = 0, clouds = [];
-    for (var i = 0; i < 7; i++) clouds.push({ x: Math.random(), y: Math.random(), r: 20 + Math.random() * 40, v: 0.3 + Math.random() * 0.5 });
-    function LX(l) { return W * (l * 2 + 1) / 6; }
-    function move(d) { if (!started) { started = true; $('#rHint', el).classList.add('hidden'); } if (!alive) return; lane = Math.max(0, Math.min(2, lane + d)); }
-    var sx = null;
-    cv.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
-    cv.addEventListener('touchend', function (e) { var x = e.changedTouches[0].clientX, dx = x - sx; if (Math.abs(dx) > 30) move(dx > 0 ? 1 : -1); else { var r = cv.getBoundingClientRect(); move(x - r.left < W / 2 ? -1 : 1); } e.preventDefault(); });
-    cv.addEventListener('mousedown', function (e) { var r = cv.getBoundingClientRect(); move(e.clientX - r.left < W / 2 ? -1 : 1); });
-    function key(e) { if (e.key === 'ArrowLeft' || e.key === 'a') move(-1); if (e.key === 'ArrowRight' || e.key === 'd') move(1); }
-    document.addEventListener('keydown', key);
-    el.addEventListener('click', function (e) { if (e.target.dataset.x === 'quit') end(); });
-    function spawnRow() {
-      var obst = U.rng.int(3), two = t > 12 && U.rng.chance(0.35), lanes = [obst];
-      if (two) lanes.push((obst + 1 + U.rng.int(2)) % 3);
-      lanes.forEach(function (l) { objs.push({ l: l, y: -50, k: U.rng.chance(0.5) ? 'storm' : 'spire' }); });
-      var free = [0, 1, 2].filter(function (l) { return lanes.indexOf(l) < 0; }), fl = free[U.rng.int(free.length)];
-      var bonus = U.rng.float();
-      if (bonus < 0.06) objs.push({ l: fl, y: -50, k: 'shield' }); else if (bonus < 0.12) objs.push({ l: fl, y: -50, k: 'magnet' });
-      else for (var c = 0; c < 3; c++) objs.push({ l: fl, y: -50 - c * 46, k: 'coin' });
-    }
-    function drawObj(o, x) {
-      if (o.k === 'coin') { g.drawImage(coinImg, x - 15, o.y - 15, 30, 30); return; }
-      if (o.k === 'shield' || o.k === 'magnet') { g.fillStyle = o.k === 'shield' ? 'rgba(120,200,255,.85)' : 'rgba(255,120,160,.85)'; g.beginPath(); g.arc(x, o.y, 18, 0, 7); g.fill(); g.fillStyle = '#fff'; g.font = '18px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(o.k === 'shield' ? '🛡' : '🧲', x, o.y + 1); return; }
-      if (o.k === 'storm') { g.fillStyle = '#4b4560'; [[-16, 0, 18], [6, -6, 20], [20, 4, 14], [0, 8, 16]].forEach(function (c) { g.beginPath(); g.arc(x + c[0], o.y + c[1], c[2], 0, 7); g.fill(); }); g.strokeStyle = '#ffe36b'; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 2, o.y + 14); g.lineTo(x + 6, o.y + 26); g.lineTo(x - 2, o.y + 28); g.lineTo(x + 5, o.y + 42); g.stroke(); return; }
-      g.fillStyle = '#5a3f2e'; g.beginPath(); g.moveTo(x - 20, o.y + 26); g.lineTo(x, o.y - 30); g.lineTo(x + 20, o.y + 26); g.closePath(); g.fill(); g.fillStyle = '#8f2a1a'; g.beginPath(); g.moveTo(x - 9, o.y - 8); g.lineTo(x, o.y - 30); g.lineTo(x + 9, o.y - 8); g.fill();
-    }
-    function frame(ts) {
-      if (!el.parentNode) return;
-      var dt = Math.min(0.05, last ? (ts - last) / 1000 : 0); last = ts;
-      if (started && alive) {
-        t += dt; speed = Math.min(720, 260 + t * 9); spawn -= dt;
-        if (spawn <= 0) { spawnRow(); spawn = Math.max(0.42, 0.9 - t * 0.012); }
-        lx += (lane - lx) * Math.min(1, dt * 14);
-        shield = Math.max(0, shield - dt); magnet = Math.max(0, magnet - dt);
-        var ry = H * 0.8;
-        objs.forEach(function (o) {
-          o.y += speed * dt;
-          if (magnet > 0 && o.k === 'coin' && o.y > ry - 220) o.l = lane;
-          if (o.dead || Math.abs(o.y - ry) > 30 || o.l !== lane || Math.abs(lx - lane) > 0.5) return;
-          if (o.k === 'coin') { coins++; o.dead = true; }
-          else if (o.k === 'shield') { shield = 8; o.dead = true; }
-          else if (o.k === 'magnet') { magnet = 7; o.dead = true; }
-          else if (shield > 0) { shield = 0; o.dead = true; U.S.error(); }
-          else { alive = false; U.S.error(); setTimeout(end, 700); }
-        });
-        objs = objs.filter(function (o) { return !o.dead && o.y < H + 60; });
-        $('#rCoins', el).textContent = coins;
-        var bf = $('#rBuf', el); bf.classList.toggle('hidden', !(shield || magnet)); bf.textContent = (shield ? '🛡' + Math.ceil(shield) : '') + (magnet ? ' 🧲' + Math.ceil(magnet) : '');
-      }
-      var sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#f6d9a8'); sky.addColorStop(1, '#a9d3d8'); g.fillStyle = sky; g.fillRect(0, 0, W, H);
-      g.fillStyle = 'rgba(255,255,255,.75)'; clouds.forEach(function (c) { c.y += c.v * dt * (started ? speed / 300 : 0.3) / 3; if (c.y > 1.1) { c.y = -0.1; c.x = Math.random(); } g.beginPath(); g.ellipse(c.x * W, c.y * H, c.r * 1.6, c.r * 0.7, 0, 0, 7); g.fill(); });
-      g.strokeStyle = 'rgba(143,42,26,.18)'; g.setLineDash([10, 14]); g.lineWidth = 2; [1, 2].forEach(function (k) { g.beginPath(); g.moveTo(W * k / 3, 0); g.lineTo(W * k / 3, H); g.stroke(); }); g.setLineDash([]);
-      objs.forEach(function (o) { drawObj(o, LX(o.l)); });
-      var x = LX(lx), y = H * 0.8 + Math.sin(ts / 140) * 4, rw = 70, rh = rw * 1.3;
-      if (shield > 0) { g.fillStyle = 'rgba(120,200,255,.35)'; g.beginPath(); g.arc(x, y, 48, 0, 7); g.fill(); }
-      g.save(); g.translate(x, y); g.rotate((lane - lx) * 0.35); if (!alive) g.globalAlpha = 0.5; if (raven.complete && raven.naturalWidth) { var sh = raven.naturalHeight * 0.68, rh2 = rw * sh / raven.naturalWidth; g.drawImage(raven, 0, 0, raven.naturalWidth, sh, -rw / 2, -rh2 / 2, rw, rh2); }   // ворон без пенька g.restore();
-      requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
-    var ended = false;
-    function end() {
-      if (ended) return; ended = true; document.removeEventListener('keydown', key); el.remove();
-      var r = X.runFinish(st(), coins, U.now());
-      U.dialog('<img src="img/guide/raven.webp" style="width:90px"><h2>Полёт окончен!</h2><p>Монеток-мини собрано: <b>' + coins + '</b>' + (r.capped ? '<br><span class="small muted">Сегодня засчитано ' + r.got + ' — дневной лимит ' + D.MINI.runCoinCap + '</span>' : '') + '</p><p class="small">На счету: ' + st().mini.coins + ' — тратьте в мини-лавке.</p>',
-        [{ t: 'Ещё полёт', act: 'mRun', cls: 'green' }, { t: 'В мини-лавку', act: 'miniMenu', cls: 'sec' }]);
-      after();
-    }
   }
 
   /* ---------- Магический сапёр ---------- */
@@ -346,7 +267,6 @@
   Object.assign(U.ACT, {
     miniMenu: function () { U.closeAll(); U.openSheet('Мини-игры', miniHTML); },
     mSearch: function () { searchGame(); },
-    mRun: function () { runnerGame(); },
     mSweep: function () { sweepGame(!!(st().mini.sw && !st().mini.sw.over) || !!st().mini.sw); },
     mBuy: function (d) { var r = X.shopBuy(st(), d.id, U.rng, U.now()); if (!r.ok) { U.toast(r.reason || 'Нельзя'); U.S.error(); return; } U.toast('Куплено: ' + rewardText(r), U.IC.energy); U.S.coin(); after(); U.refreshSheet(); },
     raids: function () { U.closeAll(); U.openSheet('Набеги', raidsHTML); },
