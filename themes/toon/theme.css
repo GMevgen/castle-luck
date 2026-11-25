@@ -110,3 +110,79 @@ h1,h2,.machine .title{text-shadow:0 2px 0 rgba(20,30,60,.35)}
 #top .res .mx{display:none}
 .controls .betbox .small{white-space:nowrap}
 .slot .row .btn{font-weight:900;border:2.5px solid var(--ol)!important;box-shadow:0 3px 0 var(--ol)!important;border-radius:12px}
+/* ===== 0.8: «Монеточный» вид — жирные буквы с обводкой везде, деревня уровня, анимации атаки/набега/купола ===== */
+h1,h2,h3,.btn,#nav button span{font-weight:900!important}
+h2,.dialog h2{color:#fff!important;text-shadow:var(--olw)!important;letter-spacing:.5px}
+.btn{border:2.5px solid var(--ol)!important;box-shadow:0 3px 0 var(--ol)!important;border-radius:12px!important}
+#nav button span{color:#fff!important;text-shadow:0 1px 0 var(--ol),1px 0 0 var(--ol),-1px 0 0 var(--ol),0 -1px 0 var(--ol),0 2px 0 var(--ol)}
+#nav{background:linear-gradient(#5cc1ff,#2f8fe0)!important}
+.kcard.r-E{box-shadow:0 0 0 3px #ffc21a,0 0 12px rgba(255,194,26,.7)!important}
+.kcard.r-L{box-shadow:0 0 0 3px #1a1a22,0 0 0 5px #ffc21a,0 0 14px rgba(0,0,0,.6)!important}
+/* экран удачи: «СПИН» целиком на экране 360×740 без прокрутки */
+.troof{height:84px!important}
+.tplate{top:0!important;padding:3px 26px 3px 3px!important;min-width:150px!important}
+.tplate>img{width:32px!important;height:32px!important}
+.tjar{width:50px!important}.tjar img{width:50px!important}
+.trac{width:58px!important;top:-2px!important}.trac img{width:58px!important}
+.twand{top:30px!important;right:54px!important;width:28px!important}
+.tshd{position:absolute;left:52px;top:46px;padding:1px 6px;border-radius:9px;background:linear-gradient(#58b7ff,#1f6fd1);border:2px solid var(--ol);font:900 11px var(--body);color:#fff;text-shadow:0 1px 0 var(--ol)}
+.winline{min-height:34px!important;padding:0 8px!important}
+.winline .big{font-size:24px!important}
+.slot>.evbar{order:12!important}
+.slot>.machine{width:262px;box-sizing:border-box;margin-left:auto!important;margin-right:auto!important;padding:6px 6px 8px!important}
+.tpup{top:150px!important;left:0!important;width:56px!important}
+.tenergy{margin:0 30px!important}.tenergy .trk{height:22px!important}.tenergy .trk b{font-size:14px!important}.tenergy .plank{font-size:10.5px!important;padding:1px 10px!important}
+.controls{grid-template-columns:64px 1fr 66px!important}
+.controls .spinbtn{height:72px!important}
+.controls .spinbtn::before{font-size:34px!important}
+.controls #autoBtn{width:60px!important;height:60px!important}
+.tcards{width:62px!important}
+.machine.shake{animation:tshake .45s}
+@keyframes tshake{20%{transform:translate(-6px,2px) rotate(-1deg)}40%{transform:translate(6px,-2px) rotate(1deg)}60%{transform:translate(-4px,1px)}80%{transform:translate(3px,0)}}
+.tfx{position:absolute;left:50%;top:38%;z-index:60;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.tfx img{width:150px;filter:drop-shadow(0 6px 0 rgba(27,35,64,.45))}
+.tfx b{margin-top:-6px;font:900 44px var(--body);color:#fff;text-shadow:var(--olw),0 0 18px rgba(255,255,255,.6)}
+.tfx.atk img{animation:tslam 1.1s cubic-bezier(.3,1.6,.5,1) both;transform-origin:80% 85%}
+.tfx.atk b{color:#ffdf3a;animation:tpop 1.4s both}
+@keyframes tslam{0%{transform:rotate(-80deg) scale(.4);opacity:0}35%{transform:rotate(25deg) scale(1.1);opacity:1}50%{transform:rotate(-8deg)}70%{transform:rotate(0)}100%{transform:rotate(0);opacity:0}}
+.tfx.shd img{animation:tshield 1.4s both}
+.tfx.shd b{color:#8fd4ff;animation:tpop 1.4s both}
+@keyframes tshield{0%{transform:scale(.2);opacity:0}30%{transform:scale(1.25);opacity:1;filter:drop-shadow(0 0 30px #5cc1ff)}50%{transform:scale(1)}85%{opacity:1}100%{transform:scale(.6) translateY(-200px);opacity:0}}
+.tfx.raid img{animation:tbounce 1.3s both}
+.tfx.raid b{color:#ff9bd0;animation:tpop 1.3s both}
+@keyframes tbounce{0%{transform:translateY(120px) scale(.5);opacity:0}30%{transform:translateY(-20px) scale(1.1);opacity:1}45%{transform:translateY(0) scale(1,.9)}60%{transform:translateY(-12px)}75%{transform:translateY(0)}100%{opacity:0}}
+@keyframes tpop{0%{transform:scale(0)}30%{transform:scale(1.3)}45%{transform:scale(1)}85%{opacity:1}100%{opacity:0}}
+/* раскопки */
+.tdig{position:absolute;inset:0;z-index:70;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,rgba(120,200,90,.85),rgba(30,90,30,.92))}
+.tdbox{width:88%;text-align:center;color:#fff}
+.tdbox p{font-weight:800;text-shadow:0 1px 0 var(--ol)}
+.tdholes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0}
+.hole{height:110px;border-radius:50%;background:radial-gradient(ellipse at 50% 60%,#6b3c17 0 38%,#8f5a2a 39% 55%,#5fae3c 56%);border:3px solid var(--ol);box-shadow:0 5px 0 var(--ol);font-size:34px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff}
+.hole span{animation:tdigw 1.2s ease-in-out infinite}
+@keyframes tdigw{50%{transform:rotate(-20deg) translateY(-4px)}}
+.hole.open{background:radial-gradient(ellipse at 50% 60%,#3a200a 0 45%,#8f5a2a 46% 58%,#5fae3c 59%);animation:tpop .5s}
+.hole img{width:44px}.hole b{font:900 18px var(--body);text-shadow:var(--olw)}
+/* деревня уровня */
+#screen .tvil{position:relative;min-height:100%;padding:6px 8px 10px;background:url(img/ui/castle_bg.webp) center bottom/cover}
+.tvhead{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border-radius:14px;background:var(--wood);border:3px solid #5b3416;box-shadow:0 3px 0 #5b3416}
+.tvhead b{display:block;font:900 18px var(--body);color:#fff;text-shadow:var(--olw)}
+.tvhead span{font:800 11px var(--body);color:#ffeccc}
+.tvhead .tstars{margin-left:auto;padding:2px 9px;border-radius:10px;background:#fff;border:2px solid var(--ol);font:900 15px var(--body);color:#f2a800;text-shadow:none}
+.tvprog{position:relative;flex-basis:100%;height:18px;border-radius:9px;background:#2a3354;border:2px solid var(--ol);overflow:hidden}
+.tvprog i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#ffe36a,#ffb21f)}
+.tvprog em{position:absolute;inset:0;display:grid;place-items:center;font:900 12px var(--body);font-style:normal;color:#fff;text-shadow:0 1px 0 var(--ol),1px 0 0 var(--ol),-1px 0 0 var(--ol)}
+.tvscene{position:relative;height:456px;margin-top:6px}
+.tvb{position:absolute;width:46%;display:flex;flex-direction:column;align-items:center}
+.tvb.p0{left:0;top:0}.tvb.p1{right:0;top:0}.tvb.p2{left:27%;top:150px}.tvb.p3{left:0;top:300px}.tvb.p4{right:0;top:300px}
+.tvimg{position:relative;width:100%;height:96px}
+.tvimg img{position:absolute;left:50%;bottom:0;transform:translateX(-50%);max-width:100%;max-height:96px;filter:drop-shadow(0 3px 0 rgba(27,35,64,.3))}
+.tvimg .bld.s1{clip-path:inset(72% 0 0 0)}.tvimg .bld.s2{clip-path:inset(46% 0 0 0)}.tvimg .bld.s3{clip-path:inset(20% 0 0 0);filter:saturate(.7) drop-shadow(0 3px 0 rgba(27,35,64,.3))}
+.tvb.pop .tvimg .bld{animation:tpop .6s}
+.tvname{margin-top:1px;font:900 11px var(--body);color:#fff;text-shadow:0 1px 0 var(--ol),1px 0 0 var(--ol),-1px 0 0 var(--ol),0 -1px 0 var(--ol)}
+.tvst{font-size:14px;color:#ffc21a;-webkit-text-stroke:.6px var(--ol);letter-spacing:1px;line-height:1}.tvst i{font-style:normal;color:rgba(255,255,255,.55)}
+.tvbtn{display:flex;align-items:center;gap:3px;margin-top:2px;padding:3px 9px;border-radius:11px;background:linear-gradient(#8cf05a,#3fb43c);border:2.5px solid var(--ol);box-shadow:0 3px 0 var(--ol);font:900 13px var(--body);color:#fff;text-shadow:0 1px 0 var(--ol),1px 0 0 var(--ol),-1px 0 0 var(--ol)}
+.tvbtn.no{background:linear-gradient(#c9c9c9,#9a9a9a)}
+.tvbtn img{width:16px;height:16px}.tvbtn small{font-size:10px;color:#fff3a0}
+.tvok{margin-top:2px;font:900 18px var(--body);color:#3fb43c;text-shadow:var(--olw)}
+.tvpet{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;background:none;border:0;padding:0}
+.tvpet img{width:56px}.tvpet span{padding:1px 7px;border-radius:8px;background:#fff;border:2px solid var(--ol);font:900 10px var(--body);color:var(--ol)}

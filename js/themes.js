@@ -26,8 +26,8 @@
   /* Все файлы пишутся отсюда (а не тегами в index.html), иначе сканер предзагрузки браузера успевает запросить их
      по адресу без <base> — лишние 404 и запросы. Только файлы активной темы попадают на страницу. */
   var CSS = ['../../css/style.css', 'theme.gen.css', 'theme.css'];
-  var JS = ['../../js/platform.js', '../../js/rng.js', '../../js/data.js', '../../js/engine.js', '../../js/story2.js', '../../js/extra.js', '../../js/audio.js',
-    'theme.js', 'isomask.js', '../../js/theme-rt.js', '../../js/iso-fx.js', '../../js/iso.js', '../../js/ui.js', '../../js/ui-extra.js', '../../js/ui-v07.js'];
+  var JS = ['../../js/platform.js', '../../js/rng.js', '../../js/data.js', '../../js/engine.js', '../../js/story2.js', '../../js/extra.js', '../../js/v08.js', '../../js/audio.js',
+    'theme.js', 'isomask.js', '../../js/theme-rt.js', '../../js/iso-fx.js', '../../js/iso.js', '../../js/ui.js', '../../js/ui-extra.js', '../../js/ui-v07.js', '../../js/ui-v08.js'];
   CL.THEMES.css = CSS; CL.THEMES.js = JS;
   CL.THEMES.writeScripts = function () { root.document.write(JS.map(function (f) { return '<script src="' + f + '"><\/script>'; }).join('')); };
   if (root.document && root.document.write) root.document.write('<base href="themes/' + id + '/">' + CSS.map(function (f) { return '<link rel="stylesheet" href="' + f + '">'; }).join(''));

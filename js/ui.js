@@ -208,6 +208,7 @@
     $('#nav').innerHTML = items.map(function (it) { return '<button data-act="go" data-to="' + it[0] + '" class="' + (screen === it[0] ? 'on' : '') + '"><img src="' + it[2] + '"><span>' + it[1] + '</span><span class="badge hidden">0</span></button>'; }).join('');
   }
   function go(to) {
+    if (window.CLT) CLT.old = false;
     if (spinning && to !== 'slot') { auto = false; }
     if (to !== 'castle' && iso) { iso.destroy(); iso = null; }
     screen = to; buildNav(); renderScreen(); updateTop(); $('#screen').scrollTop = 0;
@@ -217,6 +218,7 @@
     el.classList.toggle('iso-mode', screen === 'castle');
     if (screen !== 'castle' && iso) { iso.destroy(); iso = null; }
     if (screen === 'slot') { el.innerHTML = renderSlot(); mountSlot(); }
+    else if (screen === 'castle' && window.CLT && CLT.on() && !CLT.old) { if (iso) { iso.destroy(); iso = null; } el.classList.remove('iso-mode'); el.innerHTML = CLT.villageHTML(); }
     else if (screen === 'castle') { if (iso && iso.alive() && $('#isoHud')) updateCastle(); else { el.innerHTML = renderCastle(); mountCastle(); } }
     else if (screen === 'cards') el.innerHTML = renderCards();
     else if (screen === 'quests') el.innerHTML = renderQuests();
@@ -262,12 +264,12 @@
       '<button class="tjar" data-act="go" data-to="events"><img src="img/extra/jar.webp" alt=""><span class="tag">' + timerSpan(ce.end) + '</span></button>' +
       '<div class="tplate"><img src="' + h.img + '" alt=""><div class="tpt"><b>' + esc(h.name).toUpperCase() + '</b><span><img src="' + IC.coin + '" alt=""><i id="tPlCoins"></i></span></div><em id="tPlBet">Х 1</em></div>' +
       '<img class="twand" src="img/extra/wand.webp" alt="">' +
-      '<button class="trac" data-act="bld" data-id="market"><img src="img/extra/raccoon.webp" alt=""><span class="plank">ОБМЕНЯТЬ</span></button></div>' +
+      '<span class="tshd" id="tShd"></span><button class="trac" data-act="xch"><img src="img/extra/raccoon.webp" alt=""><span class="plank">ОБМЕНЯТЬ</span></button></div>' +
       '<img class="tdeco tpup" src="img/guide/raven.webp" alt="">';
   }
   function updateDeco() {
     var c = $('#tPlCoins'); if (!c) return;
-    var d = E.derived(state, now()); c.textContent = grp(state.coins - coinOffset); $('#tPlBet').textContent = 'Х ' + state.bet;
+    var d = E.derived(state, now()); c.textContent = grp(state.coins - coinOffset); $('#tShd').textContent = '🛡×' + state.raid.shields; $('#tPlBet').textContent = 'Х ' + state.bet;
     $('#tEnTxt').textContent = state.energy + '/' + d.maxEnergy;
     $('#tEnFill').style.width = Math.min(100, state.energy / d.maxEnergy * 100).toFixed(1) + '%';
     var left = state.energyT + d.regenMs - Math.max(now(), state.time.high);
@@ -471,6 +473,7 @@
     if (onSlot && r.eventItems) flyItems(r, function () { updateEvBar(); stageRewards(r.eventStages); });
     else { updateEvBar(); stageRewards(r.eventStages); }
     if (window.CLX) CLX.afterSpin(r, onSlot);
+    if (window.CLT) CLT.afterSpin(r, onSlot);
     if (r.cards.length) S.card();
     if (r.chest != null) toast(r.chestSlot >= 0 ? D.CHESTS[r.chest].name + ' получен!' : 'Нет места для сундука — он превращён в монеты', D.CHESTS[r.chest].img);
     if (r.levelUps) { auto = false; showLevelUps(r.levelUps); }
@@ -728,7 +731,7 @@
     var uniq = E.uniqueCards(state), main = D.COLLECTIONS.filter(function (c) { return !c.event; }), evs = D.COLLECTIONS.filter(function (c) { return c.event; });
     var mainDone = main.filter(function (c) { return state.colDone[c.id]; }).length;
     var ce = E.currentEvent(now());
-    var h = '<div class="pad"><div class="card"><div class="serif" style="font-size:20px;color:var(--gold)">Альбом</div><div>Карт: <b>' + uniq + '</b> из 162 · Коллекций: <b>' + mainDone + '</b> из 14</div>' + bar(uniq, 162) + '<div style="height:10px"></div>' +
+    var h = '<div class="pad">' + (window.CLT ? CLT.visitorHTML() : '') + '<div class="card"><div class="serif" style="font-size:20px;color:var(--gold)">Альбом</div><div>Карт: <b>' + uniq + '</b> из 162 · Коллекций: <b>' + mainDone + '</b> из 14</div>' + bar(uniq, 162) + '<div style="height:10px"></div>' +
       '<div class="row"><button class="btn sm grow" data-act="gallery">🖼 Галерея</button><button class="btn sm sec grow" data-act="bld" data-id="market">♻ Обмен (' + E.duplicateValue(state) + ' печ.)</button></div></div>';
     h += '<h3>Событие сейчас</h3>' + colRow(D.COL_BY_ID[ce.ev.col], true);
     h += '<h3>Коллекции</h3>' + main.map(function (c) { return colRow(c); }).join('');

@@ -1,7 +1,7 @@
 /* Service Worker «Замок удачи»: кэширует ВСЕ файлы игры при первой загрузке → полная игра офлайн.
    Версия кэша = хэш содержимого; новая версия ставится в фоне и ждёт, пока игрок нажмёт «Обновить». */
 'use strict';
-var VERSION = '9e9d2cdade0f';
+var VERSION = '6e9b475ac5f0';
 var CACHE = 'castle-luck-' + VERSION;
 var ASSETS = [
 "./",
@@ -29,7 +29,9 @@ var ASSETS = [
 "js/themes.js",
 "js/ui-extra.js",
 "js/ui-v07.js",
+"js/ui-v08.js",
 "js/ui.js",
+"js/v08.js",
 "manifest.webmanifest",
 "themes/anime/img/bld/academy.webp",
 "themes/anime/img/bld/citadel.webp",
@@ -1454,6 +1456,30 @@ var THEMES = {
 "themes/toon/img/extra/jar.webp",
 "themes/toon/img/extra/raccoon.webp",
 "themes/toon/img/extra/roof.webp",
+"themes/toon/img/extra/vil/candy_0.webp",
+"themes/toon/img/extra/vil/candy_1.webp",
+"themes/toon/img/extra/vil/candy_2.webp",
+"themes/toon/img/extra/vil/candy_3.webp",
+"themes/toon/img/extra/vil/candy_4.webp",
+"themes/toon/img/extra/vil/candy_5.webp",
+"themes/toon/img/extra/vil/honey_0.webp",
+"themes/toon/img/extra/vil/honey_1.webp",
+"themes/toon/img/extra/vil/honey_2.webp",
+"themes/toon/img/extra/vil/honey_3.webp",
+"themes/toon/img/extra/vil/honey_4.webp",
+"themes/toon/img/extra/vil/honey_5.webp",
+"themes/toon/img/extra/vil/pirate_0.webp",
+"themes/toon/img/extra/vil/pirate_1.webp",
+"themes/toon/img/extra/vil/pirate_2.webp",
+"themes/toon/img/extra/vil/pirate_3.webp",
+"themes/toon/img/extra/vil/pirate_4.webp",
+"themes/toon/img/extra/vil/pirate_5.webp",
+"themes/toon/img/extra/vil/winter_0.webp",
+"themes/toon/img/extra/vil/winter_1.webp",
+"themes/toon/img/extra/vil/winter_2.webp",
+"themes/toon/img/extra/vil/winter_3.webp",
+"themes/toon/img/extra/vil/winter_4.webp",
+"themes/toon/img/extra/vil/winter_5.webp",
 "themes/toon/img/extra/wand.webp",
 "themes/toon/img/guide/raven.webp",
 "themes/toon/img/iso/academy_1.webp",
