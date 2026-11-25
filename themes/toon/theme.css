@@ -19,3 +19,94 @@ h1,h2,.machine .title{text-shadow:0 2px 0 rgba(20,30,60,.35)}
 #top{box-shadow:0 3px 0 #1f2a4a,0 8px 16px rgba(0,30,0,.18)}
 .tpick.on{border-color:#ff8a1f;box-shadow:0 0 0 3px #1f2a4a,0 4px 0 3px #ff8a1f}
 .tpick i{background:linear-gradient(90deg,#3fb43c,#ffd23a,#ff8a1f,#36a6ff)}
+/* ===== 0.7.2: экран удачи и верхняя панель в духе «Монеточки» (весь арт свой) =====
+   небо с облаками и луг с ромашками, деревянный автомат под соломенной крышей с мёдом, табличка игрока,
+   банка-таймер события, енот-обменщик, щенок Бублик, жирные белые буквы с толстой тёмной обводкой */
+:root{--ol:#1b2340;--olw:0 2px 0 var(--ol),2px 0 0 var(--ol),-2px 0 0 var(--ol),0 -2px 0 var(--ol),1.5px 1.5px 0 var(--ol),-1.5px 1.5px 0 var(--ol),1.5px -1.5px 0 var(--ol),-1.5px -1.5px 0 var(--ol),0 4px 0 var(--ol);
+  --wood:repeating-linear-gradient(178deg,rgba(90,45,10,0) 0 7px,rgba(90,45,10,.18) 7px 8px),linear-gradient(#d29453,#a8662f 60%,#8c5223)}
+.serif,h1,h2,h3,.machine .title{font-weight:900}
+/* верх: синяя кнопка меню слева, пчела-уровень с NEW, значки, деревянная доска с денежками и большой монетой справа */
+#top{background:linear-gradient(#5cc1ff,#2f8fe0)!important;gap:5px}
+#top .gear{order:-2;width:40px;height:40px;border-radius:12px;background:linear-gradient(#58b7ff,#1f6fd1)!important;border:3px solid var(--ol)!important;color:#fff!important;font-size:0;box-shadow:inset 0 3px 0 rgba(255,255,255,.5),0 3px 0 var(--ol)}
+#top .gear::before{content:"";display:block;width:18px;height:14px;margin:auto;background:linear-gradient(#fff 0 0) top/100% 3px no-repeat,linear-gradient(#fff 0 0) center/100% 3px no-repeat,linear-gradient(#fff 0 0) bottom/100% 3px no-repeat}
+#top .lvl{order:-1;background:url(img/extra/bee.webp) center/cover no-repeat!important;color:#fff!important;font-weight:900;text-shadow:var(--olw)}
+#top.has-new .lvl::after{content:"NEW";position:absolute;right:-8px;top:-6px;padding:0 3px;border-radius:5px;background:#ff3b3b;border:2px solid var(--ol);font:900 8px/11px var(--body);color:#fff;text-shadow:none}
+#top .res{background:rgba(20,40,90,.35)!important;border:2px solid var(--ol)!important;border-radius:12px}
+#top .res .v{color:#fff!important;font-weight:900;text-shadow:0 1px 0 var(--ol),1px 0 0 var(--ol),-1px 0 0 var(--ol),0 -1px 0 var(--ol)}
+#top .res .mx{color:#dff1ff!important}
+#top .res.coins{order:9;flex-grow:1.9;position:relative;background:var(--wood)!important;border:3px solid #5b3416!important;padding-right:30px;box-shadow:0 3px 0 #5b3416}
+#top .res.coins .ri{position:absolute;right:-8px;top:50%;width:40px;height:40px;margin-top:-20px;z-index:2}
+#top .res.coins .ri img{width:40px;height:40px;box-shadow:none;filter:drop-shadow(0 2px 0 var(--ol))}
+#top .res.coins .v{font-size:15px}
+/* фон экрана удачи — небо и луг без бумажной дымки */
+.slot .bgimg{background-position:center bottom}
+.slot .bgimg::after{background:linear-gradient(rgba(255,255,255,0) 70%,rgba(80,170,60,.25))!important}
+.slot{gap:6px}
+.slot>.troof{order:1}.slot>.winline{order:2}.slot>.evbar{order:3}.slot>.machine{order:4}.slot>.tenergy{order:5}.slot>.spells-active{order:6}
+.slot>.controls{order:7}.slot>.row{order:8}.slot>.chests{order:9}.slot>.dbar{order:10}.slot>.evstrip{order:11}
+/* крыша, табличка игрока, банка, ложка и енот */
+.troof{position:relative;height:118px;margin:0 -6px -4px;z-index:3!important}
+.troof .roofimg{position:absolute;left:0;right:0;bottom:-6px;width:100%;pointer-events:none;filter:drop-shadow(0 3px 0 rgba(27,35,64,.35))}
+.tplate{position:absolute;left:50%;top:2px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:4px 30px 4px 4px;min-width:170px;border-radius:14px;background:linear-gradient(#ffffff,#e9f1ff);border:3px solid var(--ol);box-shadow:0 3px 0 var(--ol)}
+.tplate>img{width:38px;height:38px;border-radius:10px;border:2px solid var(--ol);object-fit:cover}
+.tplate .tpt{display:flex;flex-direction:column;line-height:1.1}
+.tplate .tpt b{font:900 14px var(--body);color:#fff;text-shadow:0 1px 0 var(--ol),1px 0 0 var(--ol),-1px 0 0 var(--ol),0 -1px 0 var(--ol),0 2px 0 var(--ol);letter-spacing:.5px}
+.tplate .tpt span{display:flex;align-items:center;gap:3px;font:900 13px var(--body);color:#2a3354}
+.tplate .tpt span img{width:16px;height:16px}
+.tplate em{position:absolute;right:-12px;top:50%;margin-top:-13px;padding:3px 7px;border-radius:9px;background:linear-gradient(#ff5a4a,#d8241a);border:2.5px solid var(--ol);font:900 13px var(--body);font-style:normal;color:#fff;text-shadow:0 1px 0 var(--ol);transform:rotate(6deg)}
+.tjar{position:absolute;left:2px;top:0;width:62px;padding:0;background:none;border:0}
+.tjar img{width:62px;filter:drop-shadow(0 2px 0 rgba(27,35,64,.4))}
+.tjar .tag{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);padding:1px 6px;border-radius:8px;background:#fff;border:2px solid var(--ol);font:900 11px var(--body);color:var(--ol);white-space:nowrap}
+.twand{position:absolute;right:66px;top:40px;width:34px;transform:rotate(-18deg);pointer-events:none}
+.trac{position:absolute;right:0;top:-4px;width:72px;padding:0;background:none;border:0}
+.trac img{width:72px;filter:drop-shadow(0 2px 0 rgba(27,35,64,.4))}
+.trac .plank{position:absolute;left:50%;top:44%;transform:translateX(-50%) rotate(-4deg);padding:1px 4px;border-radius:5px;background:var(--wood);border:2px solid #5b3416;font:900 9.5px var(--body);color:#fff;text-shadow:0 1px 0 #3a1e08,1px 0 0 #3a1e08,-1px 0 0 #3a1e08,0 -1px 0 #3a1e08;white-space:nowrap}
+/* сумма выигрыша — на коричневой доске; шкала события — как шкала набега с наградой */
+.winline{min-height:42px;margin:0 8px;padding:2px 10px;border-radius:12px;background:var(--wood);border:3px solid #5b3416;box-shadow:0 3px 0 #5b3416,inset 0 2px 0 rgba(255,220,170,.5);color:#fff;z-index:2!important}
+.winline .muted{color:#fff3dc!important;font-weight:800;text-shadow:0 1px 0 #3a1e08}
+.winline .big{color:#fff!important;font-weight:900!important;font-size:30px!important;-webkit-text-stroke:0!important;text-shadow:var(--olw)!important}
+.evbar{margin:0 8px;border-radius:14px;background:linear-gradient(#fff7e0,#ffe7a8)!important;border:3px solid var(--ol)!important;box-shadow:0 3px 0 var(--ol)!important}
+.evbar .trk{height:22px;border-radius:11px;background:#2a3354!important;border:2px solid var(--ol)!important}
+.evbar .trk i{background:linear-gradient(#ffd84a,#ff9f1a)!important}
+.evbar .trk span{color:#fff!important;font-weight:900!important;text-shadow:0 1px 0 var(--ol),1px 0 0 var(--ol),-1px 0 0 var(--ol),0 -1px 0 var(--ol)!important}
+.evbar .ico img{border-radius:50%!important;box-shadow:0 0 0 3px var(--ol)!important}
+/* деревянный автомат с тремя кремовыми барабанами */
+.machine{margin-top:0!important;padding:8px 8px 10px!important;background:var(--wood)!important;border-radius:16px!important;box-shadow:0 0 0 3.5px #5b3416,0 6px 0 3.5px #4a2a10,inset 0 3px 0 rgba(255,220,170,.5)!important}
+.machine::before{display:none}
+.machine .title{display:none}
+.reels{gap:7px!important;background:#6b3c17!important;box-shadow:inset 0 0 0 3px #4a2a10,inset 0 3px 8px rgba(0,0,0,.5)!important}
+.reel{background:linear-gradient(90deg,#f3e3bf,#fff8e6 50%,#f3e3bf)!important;border:3px solid var(--ol);border-radius:12px!important}
+.reel::before{background:linear-gradient(rgba(120,80,30,.35),rgba(120,80,30,0))!important}.reel::after{background:linear-gradient(rgba(120,80,30,0),rgba(120,80,30,.35))!important}
+.cell img{object-fit:contain!important;box-shadow:none!important;border-radius:0!important;filter:drop-shadow(0 3px 0 rgba(27,35,64,.35))}
+.payline::before{border:3px solid #ffd23a!important;box-shadow:0 0 0 2px var(--ol),0 0 16px rgba(255,210,60,.7)!important}
+/* щенок слева от барабанов, карты в левом нижнем углу */
+.tpup{position:absolute!important;left:-2px;top:300px;width:60px;z-index:4!important;pointer-events:none;filter:drop-shadow(0 3px 0 rgba(27,35,64,.35))}
+.slot>.machine{margin-left:36px}
+.tcards{grid-column:1;grid-row:1/3;width:74px;padding:0;background:none;border:0;transform:rotate(-10deg)}
+.tcards img{width:70px;filter:drop-shadow(0 3px 0 rgba(27,35,64,.35))}
+/* зелёная шкала энергии «21/50» и оранжевая доска «+1 через…» */
+.tenergy{display:flex;flex-direction:column;align-items:center;gap:3px;margin:2px 26px 0}
+.tenergy .trk{position:relative;width:100%;height:26px;border-radius:13px;background:#2a3354;border:3px solid var(--ol);overflow:hidden;box-shadow:0 3px 0 var(--ol)}
+.tenergy .trk i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#8cf05a,#3fb43c 60%,#2c8a2a);border-radius:10px;transition:width .4s}
+.tenergy .trk b{position:absolute;inset:0;display:grid;place-items:center;font:900 16px var(--body);color:#fff;text-shadow:var(--olw)}
+.tenergy .plank{text-transform:uppercase;padding:2px 12px;border-radius:9px;background:linear-gradient(#ffb347,#ff8a1f);border:2.5px solid #8a3d07;font:900 12px var(--body);color:#fff;text-shadow:0 1px 0 #6a2a00,1px 0 0 #6a2a00,-1px 0 0 #6a2a00,0 -1px 0 #6a2a00}
+/* огромная красная глянцевая «СПИН», под ней доска ставки с молнией, справа круглая кнопка-колесо */
+.controls{display:grid!important;grid-template-columns:76px 1fr 76px;grid-template-rows:auto auto;gap:4px 8px!important;align-items:center}
+.controls .spinbtn{grid-column:2;grid-row:1;height:92px!important;border-radius:26px!important;background:radial-gradient(ellipse at 50% 18%,#ff8a7a,#f0352a 45%,#b8160f)!important;border:3.5px solid var(--ol)!important;box-shadow:0 7px 0 #7a0d08,0 7px 0 3.5px var(--ol),inset 0 4px 0 rgba(255,255,255,.55)!important;font-size:0!important;color:#fff!important}
+.controls .spinbtn::before{content:"СПИН";display:block;font:900 40px/1 var(--body);letter-spacing:2px;color:#fff;text-shadow:0 3px 0 var(--ol),3px 0 0 var(--ol),-3px 0 0 var(--ol),0 -3px 0 var(--ol),2px 2px 0 var(--ol),-2px 2px 0 var(--ol),2px -2px 0 var(--ol),-2px -2px 0 var(--ol),0 6px 0 var(--ol)}
+.controls .spinbtn small{font:900 11.5px var(--body)!important;color:#fff!important;text-shadow:0 1px 0 var(--ol),1px 0 0 var(--ol),-1px 0 0 var(--ol)!important;margin-top:4px}
+.controls .betbox{grid-column:2;grid-row:2;justify-self:center;width:auto!important;flex-direction:row!important;gap:6px!important;padding:3px 6px;border-radius:12px;background:var(--wood);border:3px solid #5b3416;box-shadow:0 3px 0 #5b3416}
+.controls .betbox .small{font-size:0!important}
+.controls .betbox .small::before{content:"⚡ СТАВКА";font:900 13px var(--body);color:#fff;text-shadow:0 1px 0 #3a1e08,1px 0 0 #3a1e08,-1px 0 0 #3a1e08,0 -1px 0 #3a1e08}
+.controls .betbox .val{font:900 18px var(--body)!important;color:#fff!important;text-shadow:0 1px 0 #3a1e08,1px 0 0 #3a1e08,-1px 0 0 #3a1e08,0 -1px 0 #3a1e08,0 2px 0 #3a1e08!important}
+.controls .betbox .arrows button{width:28px!important;height:26px!important;border-radius:8px!important;background:linear-gradient(#ffe07a,#ffb21f)!important;border:2px solid #5b3416!important;box-shadow:0 2px 0 #5b3416!important;color:#5b3416!important;font-weight:900}
+.controls .side{grid-column:3;grid-row:1/3;width:auto!important;align-items:center}
+.controls #autoBtn{width:70px;height:70px;border-radius:50%!important;background:conic-gradient(#ff5a4a 0 45deg,#ffd23a 0 90deg,#3fb43c 0 135deg,#36a6ff 0 180deg,#ff5a4a 0 225deg,#ffd23a 0 270deg,#3fb43c 0 315deg,#36a6ff 0)!important;border:3.5px solid var(--ol)!important;box-shadow:0 4px 0 var(--ol)!important;color:#fff!important;font:900 11px var(--body)!important;text-shadow:0 1px 0 var(--ol),1px 0 0 var(--ol),-1px 0 0 var(--ol),0 -1px 0 var(--ol),0 2px 0 var(--ol)}
+.controls #autoBtn.on{animation:tspin 2s linear infinite}
+@keyframes tspin{to{transform:rotate(360deg)}}
+.controls #turboBtn{min-height:26px!important;font-weight:900!important;border:2px solid var(--ol)!important;border-radius:9px!important}
+.controls #autoBtn{font-size:0!important}
+.controls #autoBtn::before{content:"КРУТИТЬ\A авто";white-space:pre;font:900 10.5px/1.15 var(--body);display:block}
+#top .res .mx{display:none}
+.controls .betbox .small{white-space:nowrap}
+.slot .row .btn{font-weight:900;border:2.5px solid var(--ol)!important;box-shadow:0 3px 0 var(--ol)!important;border-radius:12px}

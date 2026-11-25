@@ -107,6 +107,7 @@
       o = E.MIGRATIONS[v](o, now); v = o.v;
     }
     if (v > D.SAVE_VERSION) throw new Error('Сохранение из более новой версии игры (' + v + ')');
+    if (o.theme === 'cpencil') o.theme = 'pencil';   // 0.7.2: стиль «Цветные карандаши» удалён → «Карандаш»
     // дозаполнение недостающих полей (forward-compatible)
     var fresh = E.newState(now);
     (function fill(dst, src) {

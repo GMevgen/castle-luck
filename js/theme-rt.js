@@ -147,12 +147,13 @@
   }
 
   /* ---------- холсты: цвета через палитру темы ---------- */
+  /* 0.7.2: строка «=цвет» ставится как есть, без перекраски палитрой (подписи построек с цветами из темы) */
   function patchCanvas() {
     if (!TD.col || !root.CanvasRenderingContext2D) return;
     var P = root.CanvasRenderingContext2D.prototype;
     [['fillStyle', 'bg'], ['strokeStyle', 'border'], ['shadowColor', 'shadow']].forEach(function (pk) {
       var d = Object.getOwnPropertyDescriptor(P, pk[0]); if (!d || !d.set) return;
-      Object.defineProperty(P, pk[0], { configurable: true, enumerable: d.enumerable, get: d.get, set: function (v) { d.set.call(this, typeof v === 'string' ? mapColor(v.trim(), pk[1]) : v); } });
+      Object.defineProperty(P, pk[0], { configurable: true, enumerable: d.enumerable, get: d.get, set: function (v) { d.set.call(this, typeof v === 'string' ? (v.charAt(0) === '=' ? v.slice(1) : mapColor(v.trim(), pk[1])) : v); } });
     });
     var ft = P.fillText;   // текст на холсте — как «текст», а не «заливка»
     P.fillText = function (t, x, y, mw) {

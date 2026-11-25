@@ -522,8 +522,7 @@ textarea,input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 .tp-soon{display:grid;place-items:center;font-weight:900;font-size:13px;color:#fff;text-transform:uppercase;letter-spacing:1px}
 .tp-soon span{padding:3px 10px;border-radius:10px;background:rgba(0,0,0,.35)}
 .tp-dark{background:linear-gradient(135deg,#1d1a24,#4a3b52 55%,#7d6a4a)}
-.tp-pencil{background:repeating-linear-gradient(45deg,#f4f1ea 0 6px,#d8d4cc 6px 7px),#eee}
-.tp-cpencil{background:repeating-linear-gradient(60deg,#ffd8a8 0 7px,#a8e0ff 7px 12px,#c6f0b0 12px 18px,#f6b8d0 18px 24px)}
+.tp-pencil{background:repeating-linear-gradient(115deg,#2a241c 0 6px,#3a3228 6px 7px),radial-gradient(circle at 70% 30%,rgba(230,150,60,.35),transparent 40%),#221d16}
 .tp-toon{background:radial-gradient(circle at 30% 70%,#7ad957 0 30%,transparent 31%),radial-gradient(circle at 75% 80%,#5cc144 0 28%,transparent 29%),linear-gradient(#7fd0ff 0 55%,#66c94a 55%)}
 .whatsnew{text-align:left}
 .whatsnew h2{text-align:center}

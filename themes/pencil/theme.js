@@ -1,5 +1,5 @@
 /* 0.7: тема «Карандаш» (собрано tools/themes/gen_theme.py из pencil_spec.py — правьте описание, а не этот файл).
-   Чёрно-белый карандаш, штриховка и редкие пятна цвета; разорённый войной край: талоны, надежда, бодрость, фомки, ящики и открытки; соседи — спекулянт, самогонщица, меняла и ополченец. */
+   Мрачный нуар: уголь, карандаш и акварель на потёртой бумаге, серо-бурая гамма и редкий свет огня; разорённый войной край: талоны, надежда, бодрость, фомки, ящики и открытки; соседи — спекулянт, самогонщица, меняла и ополченец. */
 (function (root) {
   var CL = root.CL = root.CL || {};
   var TERMS = [
@@ -107,7 +107,7 @@
     ["Летний турнир", "Летняя ярмарка"]
   ];
   CL.ThemeData = {
-    id: "pencil", title: "Приют удачи", themeColor: "#2b2b2b",
+    id: "pencil", title: "Приют удачи", themeColor: "#1c1915",
     names: {
      "buildings": {
       "citadel": "Ратуша",
@@ -501,19 +501,24 @@
     },
     terms: TERMS,
     col: function (h, s, l, a, kind) {
-      var neutral = s < 0.3 || l > 0.84 || l < 0.2;
-      if (kind === 'shadow') return [30, 0.05, Math.min(l, 0.12), a];
-      if (neutral) {
-        if (kind === 'text') return [36, 0.05, l > 0.8 ? 0.95 : Math.min(l, 0.2), a];
-        if (kind === 'border') return [36, 0.04, Math.max(0.18, Math.min(0.42, l * 0.6)), a];
-        return [40, 0.1, l > 0.5 ? Math.max(0.86, l) : l, a];
+      // 0.7.2 нуар: тёмная угольно-бурая бумага, светлый текст, редкие тёплые акценты (огонь, свет)
+      var neutral = s < 0.3 || l > 0.84 || l < 0.2, warm = h >= 22 && h < 70, red = h < 22 || h >= 335;
+      if (kind === 'shadow') return [25, 0.1, Math.min(l, 0.06), a];
+      if (kind === 'text') {
+        if (!neutral && warm) return [36, 0.55, 0.64, a];
+        if (!neutral && red) return [8, 0.5, 0.6, a];
+        return [40, 0.16, l > 0.6 ? 0.92 : 0.84, a];
       }
-      if (h < 22 || h >= 335) return kind === 'bg' ? [20, 0.06, l > 0.6 ? 0.86 : Math.min(0.42, Math.max(0.3, l * 0.8)), a] : [356, Math.min(0.5, s * 0.6), Math.min(0.48, Math.max(0.34, l)), a];
-      if (kind === 'text') return [36, 0.05, Math.min(0.22, l * 0.5), a];
-      if (kind === 'bg') return [38, 0.06, l > 0.6 ? 0.88 : Math.min(0.5, Math.max(0.3, l * 0.7)), a];
-      return [36, 0.04, Math.min(0.4, Math.max(0.22, l * 0.6)), a];
+      if (kind === 'border') {
+        if (!neutral && warm) return [34, 0.45, 0.48, a];
+        if (!neutral && red) return [6, 0.42, 0.4, a];
+        return [32, 0.08, 0.36, a];
+      }
+      if (!neutral && warm) return [30, 0.32, 0.22 + 0.1 * l, a];
+      if (!neutral && red) return [6, 0.42, 0.26 + 0.12 * l, a];
+      return [32, 0.1, 0.11 + 0.14 * (1 - l), a];
     },
-    iso: {"smoke": {"forge_1": [[0.38, 0.08]], "forge_2": [[0.63, 0.13]], "forge_3": [[0.35, 0.16], [0.51, 0.1], [0.72, 0.19]]}, "labelFont": "\"PT Sans Narrow\",\"Arial Narrow\",sans-serif"},
+    iso: {"smoke": {"forge_1": [[0.38, 0.08]], "forge_2": [[0.63, 0.13]], "forge_3": [[0.35, 0.16], [0.51, 0.1], [0.72, 0.19]]}, "labelFont": "\"PT Sans Narrow\",\"Arial Narrow\",sans-serif", "label": {"bg": "rgba(24,21,17,.86)", "fg": "#efe6d2", "lockBg": "rgba(20,18,15,.8)", "lockFg": "#a59a86", "subBg": "rgba(60,40,22,.9)", "subFg": "#f2c27a", "outline": "rgba(0,0,0,.85)"}},
     fx: {"ambient": "ash"}
   };
 })(typeof window !== 'undefined' ? window : globalThis);

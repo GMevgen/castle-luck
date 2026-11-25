@@ -513,7 +513,7 @@
       if (kind === 'bg') return [nh, Math.min(0.6, s * 0.6 + 0.06), l > 0.6 ? 0.24 : Math.min(0.4, Math.max(0.24, l * 0.75)), a];
       return [nh, Math.min(0.75, s * 0.8 + 0.08), Math.min(0.55, Math.max(0.36, l)), a];
     },
-    iso: {"smoke": {"forge_1": [[0.5, 0.12]], "forge_2": [[0.6, 0.12]], "forge_3": [[0.4, 0.12], [0.55, 0.1], [0.7, 0.16]]}, "labelFont": "\"Alegreya\",Georgia,serif"},
+    iso: {"smoke": {"forge_1": [[0.5, 0.12]], "forge_2": [[0.6, 0.12]], "forge_3": [[0.4, 0.12], [0.55, 0.1], [0.7, 0.16]]}, "labelFont": "\"Alegreya SC\",\"Alegreya\",Georgia,serif", "label": {"bg": "rgba(12,9,20,.9)", "fg": "#f6e7c1", "lockBg": "rgba(30,24,36,.9)", "lockFg": "#d9cfbd", "subBg": "rgba(8,6,14,.85)", "subFg": "#efe3c6", "outline": "rgba(0,0,0,.85)"}},
     fx: {"ambient": "gloom"}
   };
 })(typeof window !== 'undefined' ? window : globalThis);

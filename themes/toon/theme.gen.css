@@ -249,8 +249,7 @@ textarea{background:#fcfaf3!important}
 .tp-soon{color:#fcfcfd}
 .tp-soon span{background:rgba(90,73,22,0.35)}
 .tp-dark{background:linear-gradient(135deg,#5a4916,#715c1c 55%,#987e53)}
-.tp-pencil{background:repeating-linear-gradient(45deg,#f9f4e7 0 6px,#f9f4e7 6px 7px),#f9f4e7}
-.tp-cpencil{background:repeating-linear-gradient(60deg,#fcdfba 0 7px,#bae5fc 7px 12px,#d3f7bf 12px 18px,#fbbbd4 18px 24px)}
+.tp-pencil{background:repeating-linear-gradient(115deg,#5a4916 0 6px,#5a4916 6px 7px),radial-gradient(circle at 70% 30%,rgba(243,151,47,0.35),transparent 40%),#5a4916}
 .tp-toon{background:radial-gradient(circle at 30% 70%,#75e34d 0 30%,transparent 31%),radial-gradient(circle at 75% 80%,#56ca3b 0 28%,transparent 29%),linear-gradient(#bae4fc 0 55%,#61d340 55%)}
 .wn-kicker{color:#844f15}
 .wn-entry{background:rgba(251,248,240,0.85);border:1.5px solid #e3b04f}

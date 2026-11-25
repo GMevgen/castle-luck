@@ -10,17 +10,19 @@
     { id: 'cyber', name: 'Киберпанк', ready: true, desc: 'Неон, стальные плиты, квартал небоскрёбов, кредиты и голограмма ворона.' },
     { id: 'dark', name: 'Тёмное фэнтези', ready: true, desc: 'Мрачные руины, готика и холодный свет луны.' },
     { id: 'pencil', name: 'Карандаш', ready: true, desc: 'Чёрно-белая штриховка разорённого края с редкими пятнами цвета.' },
-    { id: 'cpencil', name: 'Цветные карандаши', ready: true, desc: 'Сказочная деревушка цветными карандашами: пуговицы, ларцы и радужный теремок.' },
     { id: 'toon', name: 'Мультяшный', ready: true, desc: 'Яркая мультяшная долина: зелёные лужайки, ямки, ручей и толстые обводки.' }
   ];
   var BY = {}; LIST.forEach(function (t) { BY[t.id] = t; });
   function ls(k, v) { try { if (v === undefined) return root.localStorage.getItem(k); if (v === null) root.localStorage.removeItem(k); else root.localStorage.setItem(k, v); } catch (e) { return null; } }
   function valid(id) { return !!(id && BY[id] && BY[id].ready); }
   var q = (root.location && /[?&]theme=([a-z]+)/.exec(root.location.search)) || null;   // для тестов/скриншотов: ?theme=cyber
+  /* 0.7.2: удалённые стили → замена (cpencil «Цветные карандаши» → pencil «Карандаш») */
+  var GONE = { cpencil: 'pencil' };
+  if (GONE[ls(KEY)]) ls(KEY, GONE[ls(KEY)]);
   var id = q && valid(q[1]) ? q[1] : ls(KEY);
   if (!valid(id)) id = 'anime';
   if (q && valid(q[1])) ls(KEY, id);
-  CL.THEMES = { list: LIST, byId: BY, active: id, key: KEY, valid: valid, store: function (v) { ls(KEY, v); } };
+  CL.THEMES = { list: LIST, byId: BY, active: id, key: KEY, valid: valid, gone: GONE, store: function (v) { ls(KEY, v); } };
   /* Все файлы пишутся отсюда (а не тегами в index.html), иначе сканер предзагрузки браузера успевает запросить их
      по адресу без <base> — лишние 404 и запросы. Только файлы активной темы попадают на страницу. */
   var CSS = ['../../css/style.css', 'theme.gen.css', 'theme.css'];

@@ -198,7 +198,7 @@
     $('#tManaMax').textContent = '/' + fmtK(d.maxMana);
     $('#tKeys').textContent = fmtK(state.keys);
     $('#tKeysMax').textContent = '/' + fmtK(d.maxKeys);
-    var n = E.notifications(state, now());
+    var n = E.notifications(state, now()); $('#top').classList.toggle('has-new', !!n.quests); updateDeco();
     setBadge('castle', n.castle); setBadge('quests', n.quests); setBadge('events', n.events);
   }
   function setBadge(id, n) { var b = $('#nav [data-to="' + id + '"] .badge'); if (!b) return; b.textContent = n; b.classList.toggle('hidden', !n); }
@@ -239,16 +239,39 @@
     return '<div class="slot"><div class="bgimg" style="background-image:url(img/ui/castle_bg.webp)"></div>' +
       '<button class="evstrip" data-act="go" data-to="events"><img src="' + ce.ev.banner + '"><div class="grow" style="text-align:left"><b>' + ce.ev.name + '</b><div class="small muted">' + ce.ev.bonusText + '</div></div><span class="pill">' + timerSpan(ce.end) + '</span></button>' +
       evBarHTML(ce) + (window.CLX ? CLX.slotBarHTML() : '') +
+      (slotDeco() ? decoTop(ce) : '') +
       '<div class="machine"><div class="title">✦ Колесо Судьбы ✦</div><div class="reels" id="reels">' +
       [0, 1, 2].map(function (i) { return '<div class="reel" id="reel' + i + '"><div class="strip" id="strip' + i + '">' + stripHTML() + '</div><div class="hl"></div></div>'; }).join('') +
       '<div class="payline"></div></div></div>' +
+      (slotDeco() ? '<div class="tdeco tenergy"><div class="trk"><i id="tEnFill"></i><b id="tEnTxt"></b></div><div class="plank" id="tEnNext"></div></div>' : '') +
       '<div class="winline" id="winline">' + (lastWin || '<span class="muted">Потяните рычаг судьбы — нажмите «Крутить»</span>') + '</div>' +
       '<div class="spells-active" id="spellsActive"></div>' +
-      '<div class="controls"><div class="betbox"><span class="small muted">Ставка</span><span class="val" id="betVal">×1</span><div class="arrows"><button data-act="bet" data-d="-1" aria-label="меньше">−</button><button data-act="bet" data-d="1" aria-label="больше">+</button></div></div>' +
+      '<div class="controls">' + (slotDeco() ? '<button class="tdeco tcards" data-act="go" data-to="cards" aria-label="Карты"><img src="img/extra/cards.webp" alt=""></button>' : '') + '<div class="betbox"><span class="small muted">Ставка</span><span class="val" id="betVal">×1</span><div class="arrows"><button data-act="bet" data-d="-1" aria-label="меньше">−</button><button data-act="bet" data-d="1" aria-label="больше">+</button></div></div>' +
       '<button class="spinbtn" id="spinBtn" data-act="spin">КРУТИТЬ<small id="spinCost"></small></button>' +
       '<div class="side"><button class="toggle" id="autoBtn" data-act="auto">АВТО</button><button class="toggle" id="turboBtn" data-act="turbo">ТУРБО</button></div></div>' +
       '<div class="row"><button class="btn sec sm grow" data-act="spells">✨ Заклинания</button><button class="btn sec sm grow" data-act="paytable">📜 Выплаты</button></div>' + (window.CLX ? CLX.slotButtonsHTML() : '') +
-      '<div class="chests" id="chests"></div></div>';
+      '<div class="chests" id="chests"></div>' +
+      '</div>';
+  }
+  /* 0.7.2: украшения экрана удачи (видны только в стилях, где тема их включает, — «Мультяшный»):
+     табличка игрока на крыше автомата, банка с таймером события, енот-обменщик, щенок-проводник */
+  function slotDeco() { return !!(window.CL && CL.Theme && CL.Theme.iso && CL.Theme.iso('slotDeco', false)); }
+  function decoTop(ce) {
+    var h = D.HEROES[state.hero.g] || D.HEROES.m;
+    return '<div class="tdeco troof"><img class="roofimg" src="img/extra/roof.webp" alt="">' +
+      '<button class="tjar" data-act="go" data-to="events"><img src="img/extra/jar.webp" alt=""><span class="tag">' + timerSpan(ce.end) + '</span></button>' +
+      '<div class="tplate"><img src="' + h.img + '" alt=""><div class="tpt"><b>' + esc(h.name).toUpperCase() + '</b><span><img src="' + IC.coin + '" alt=""><i id="tPlCoins"></i></span></div><em id="tPlBet">Х 1</em></div>' +
+      '<img class="twand" src="img/extra/wand.webp" alt="">' +
+      '<button class="trac" data-act="bld" data-id="market"><img src="img/extra/raccoon.webp" alt=""><span class="plank">ОБМЕНЯТЬ</span></button></div>' +
+      '<img class="tdeco tpup" src="img/guide/raven.webp" alt="">';
+  }
+  function updateDeco() {
+    var c = $('#tPlCoins'); if (!c) return;
+    var d = E.derived(state, now()); c.textContent = grp(state.coins - coinOffset); $('#tPlBet').textContent = 'Х ' + state.bet;
+    $('#tEnTxt').textContent = state.energy + '/' + d.maxEnergy;
+    $('#tEnFill').style.width = Math.min(100, state.energy / d.maxEnergy * 100).toFixed(1) + '%';
+    var left = state.energyT + d.regenMs - Math.max(now(), state.time.high);
+    $('#tEnNext').textContent = state.energy >= d.maxEnergy ? 'Энергия полная' : '+1 энергия через ' + fmtTime(left);
   }
   /* ---------- шкала предметов события (единственное место, где видны предметы) ---------- */
   function evBarHTML(ce) {
@@ -971,7 +994,7 @@
     { sel: '#spinBtn', t: 'Колесо Судьбы', x: 'Главная кнопка. Жми «Крутить» — три барабана остановятся, и всё, что совпало на линии, твоё: монеты, энергия, ключи, карты, сундуки. Каждое вращение тратит энергию, равную ставке.' },
     { sel: '.betbox', t: 'Ставка', x: 'Стрелки меняют множитель: ×1, ×2, ×3… Больше ставка — больше награда, но и энергии уходит больше. Новые ставки открываются с уровнем. Не горячись — Колесо любит терпеливых.' },
     { sel: '#top .res.energy', t: 'Энергия', x: 'Топливо для Колеса. Слева — сколько есть, после «/» — максимум. Зелёное кольцо у значка — сколько осталось до следующей единицы. Энергия копится сама, даже когда игра закрыта. Нажми на значок — покажу точное время.' },
-    { sel: '#top .res.coins', t: 'Монеты', x: 'На монеты строят и улучшают замок. «12.5K» — это 12 500, «1.2M» — 1 200 000. После «/» — вместимость Склада: больше не влезет, так что не копи без дела — строй!' },
+    { sel: '#top .res.coins', t: 'Монеты', x: 'На монеты строят и улучшают замок. «12.5K» — это 12 500, «1.2M» — 1 200 000. Лимита нет — копи сколько угодно, но лучше строй!' },
     { sel: '#top .res.keys', t: 'Ключи', x: 'Ключи открывают сундуки сразу, без ожидания. После «/» — размер связки: лишние ключи не поместятся. Связку, как и всё хозяйство, расширяет Склад.' },
     { sel: '#top .res.mana', t: 'Мана', x: 'Волшебная сила для заклинаний из Башни архимага: удвоить монеты, приманить карты и прочие чудеса. Копится сама, а расходуется только по твоей команде.' },
     { sel: '#chests', t: 'Сундуки', x: 'Сюда падают сундуки с барабанов. Нажми на сундук, чтобы начать отпирание по таймеру, или открой его ключами прямо сейчас. Внутри монеты, энергия, а иногда и карты.' },

@@ -6,6 +6,9 @@
   var CL = root.CL, D = CL.Data;
   var ISO = D.ISO, SPR = CL.IsoSpr || {};
   var LFONT = (CL.Theme && CL.Theme.iso('labelFont', null)) || 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';   // 0.7: шрифт подписей — из темы
+  /* 0.7.2: цвета подписей построек из темы, как есть (без перекраски палитрой): {bg, fg, lockBg, lockFg, subBg, subFg, outline} */
+  var LBL = (CL.Theme && CL.Theme.iso('label', null)) || null;
+  function lc(k, def) { return LBL && LBL[k] ? '=' + LBL[k] : def; }
   var imgs = {}, masks = {};
   function img(name) {
     var im = imgs[name];
@@ -193,9 +196,10 @@
         else if (!m.job && m.lvl <= 0) sub = m.can ? 'Можно построить' : 'Не построено';
         ctx.font = '800 ' + fs + 'px ' + LFONT;
         var w = ctx.measureText(t).width + 18 + (m.can && !m.job && !m.locked ? 18 : 0), h = fs + 10, x = s[0] - w / 2, y = s[1];
-        rr(x, y, w, h, h / 2); ctx.fillStyle = m.locked ? 'rgba(70,58,46,.82)' : 'rgba(251,244,228,.94)'; ctx.fill();
+        rr(x, y, w, h, h / 2); ctx.fillStyle = m.locked ? lc('lockBg', 'rgba(70,58,46,.82)') : lc('bg', 'rgba(251,244,228,.94)'); ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = m.job ? '#3f7fae' : m.can && !m.locked ? '#5aa04a' : '#d9a441'; ctx.stroke();
-        ctx.fillStyle = m.locked ? '#fff3dc' : '#4a2f1c';
+        ctx.fillStyle = m.locked ? lc('lockFg', '#fff3dc') : lc('fg', '#4a2f1c');
+        if (LBL && LBL.outline) { ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeStyle = '=' + LBL.outline; ctx.strokeText(CL.Theme.tx ? CL.Theme.tx(t) : t, s[0] - (m.can && !m.job && !m.locked ? 9 : 0), y + h / 2 + 0.5); }
         ctx.fillText(t, s[0] - (m.can && !m.job && !m.locked ? 9 : 0), y + h / 2 + 0.5);
         if (m.can && !m.job && !m.locked) { ctx.beginPath(); ctx.arc(x + w - 13, y + h / 2, 7, 0, 6.283); ctx.fillStyle = '#5aa04a'; ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = '900 9px sans-serif'; ctx.fillText('▲', x + w - 13, y + h / 2 + 0.5); }
         var yy = y + h + 3;
@@ -207,8 +211,8 @@
         }
         if (sub) {
           ctx.font = '700 ' + (fs - 1) + 'px ' + LFONT;
-          var sw = ctx.measureText(sub).width + 12; rr(s[0] - sw / 2, yy, sw, fs + 4, 6); ctx.fillStyle = 'rgba(30,22,14,.6)'; ctx.fill();
-          ctx.fillStyle = '#fff6e2'; ctx.fillText(sub, s[0], yy + (fs + 4) / 2 + 0.5);
+          var sw = ctx.measureText(sub).width + 12; rr(s[0] - sw / 2, yy, sw, fs + 4, 6); ctx.fillStyle = lc('subBg', 'rgba(30,22,14,.6)'); ctx.fill();
+          ctx.fillStyle = lc('subFg', '#fff6e2'); ctx.fillText(sub, s[0], yy + (fs + 4) / 2 + 0.5);
         }
       });
     }
