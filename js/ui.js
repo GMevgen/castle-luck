@@ -200,6 +200,7 @@
     $('#tKeysMax').textContent = '/' + fmtK(d.maxKeys);
     var n = E.notifications(state, now()); $('#top').classList.toggle('has-new', !!n.quests);
     setBadge('castle', n.castle); setBadge('quests', n.quests); setBadge('events', n.events);
+    updateDeco();
   }
   function setBadge(id, n) { var b = $('#nav [data-to="' + id + '"] .badge'); if (!b) return; b.textContent = n; b.classList.toggle('hidden', !n); }
   function buildNav() {
@@ -214,6 +215,7 @@
   }
   function renderScreen() {
     var el = $('#screen');
+    if ($('#app')) $('#app').classList.toggle('slot-deco', screen === 'slot' && slotDeco());
     el.classList.toggle('iso-mode', screen === 'castle');
     if (screen !== 'castle' && iso) { iso.destroy(); iso = null; }
     if (screen === 'slot') { el.innerHTML = renderSlot(); mountSlot(); }
@@ -239,19 +241,40 @@
     return '<div class="slot"><div class="bgimg" style="background-image:url(img/ui/castle_bg.webp)"></div>' +
       '<button class="evstrip" data-act="go" data-to="events"><img src="' + ce.ev.banner + '"><div class="grow" style="text-align:left"><b>' + ce.ev.name + '</b><div class="small muted">' + ce.ev.bonusText + '</div></div><span class="pill">' + timerSpan(ce.end) + '</span></button>' +
       evBarHTML(ce) + (window.CLX ? CLX.slotBarHTML() : '') +
+      (slotDeco() ? decoTop(ce) : '') +
       '<div class="machine"><div class="title">✦ Колесо Судьбы ✦</div><div class="reels" id="reels">' +
       [0, 1, 2].map(function (i) { return '<div class="reel" id="reel' + i + '"><div class="strip" id="strip' + i + '">' + stripHTML() + '</div><div class="hl"></div></div>'; }).join('') +
       '<div class="payline"></div></div></div>' +
+      (slotDeco() ? '<div class="tdeco tenergy"><div class="trk"><i id="tEnFill"></i><b id="tEnTxt"></b></div><div class="plank" id="tEnNext"></div></div>' : '') +
       '<div class="winline" id="winline">' + (lastWin || '<span class="muted">Потяните рычаг судьбы — нажмите «Крутить»</span>') + '</div>' +
       '<div class="spells-active" id="spellsActive"></div>' +
-      '<div class="controls">' + '<div class="betbox"><span class="small muted">Ставка</span><span class="val" id="betVal">×1</span><div class="arrows"><button data-act="bet" data-d="-1" aria-label="меньше">−</button><button data-act="bet" data-d="1" aria-label="больше">+</button></div></div>' +
-      '<button class="spinbtn" id="spinBtn" data-act="spin">КРУТИТЬ<small id="spinCost"></small></button>' +
+      '<div class="controls">' + (slotDeco() ? '<button class="tdeco tcards" data-act="go" data-to="cards" aria-label="Карты"><img src="img/extra/cards.webp" alt=""></button>' : '') + '<div class="betbox"><span class="small muted">Ставка</span><span class="val" id="betVal">×1</span><div class="arrows"><button data-act="bet" data-d="-1" aria-label="меньше">−</button><button data-act="bet" data-d="1" aria-label="больше">+</button></div></div>' +
+      '<button class="spinbtn" id="spinBtn" data-act="spin">' + (slotDeco() ? 'СПИН' : 'КРУТИТЬ') + '<small id="spinCost"></small></button>' +
       '<div class="side"><button class="toggle" id="autoBtn" data-act="auto">АВТО</button><button class="toggle" id="turboBtn" data-act="turbo">ТУРБО</button></div></div>' +
       '<div class="row"><button class="btn sec sm grow" data-act="spells">✨ Заклинания</button><button class="btn sec sm grow" data-act="paytable">📜 Выплаты</button></div>' + (window.CLX ? CLX.slotButtonsHTML() : '') +
       '<div class="chests" id="chests"></div>' +
       '</div>';
   }
-  /* ---------- шкала предметов события (единственное место, где видны предметы) ---------- */
+  /* 0.9.1: украшения экрана удачи только в стиле «Монеточка» (slotDeco) */
+  function slotDeco() { return !!(window.CL && CL.Theme && CL.Theme.iso && CL.Theme.iso('slotDeco', false)); }
+  function decoTop(ce) {
+    var h = { img: D.CHARS.hero.img, name: D.CHARS.hero.name };
+    return '<div class="tdeco troof"><img class="roofimg" src="img/extra/roof.webp" alt="">' +
+      '<button class="tjar" data-act="go" data-to="events"><img src="img/extra/jar.webp" alt=""><span class="tag">' + timerSpan(ce.end) + '</span></button>' +
+      '<div class="tplate"><img src="' + h.img + '" alt=""><div class="tpt"><b>' + esc(h.name).toUpperCase() + '</b><span><img src="' + IC.coin + '" alt=""><i id="tPlCoins"></i></span></div><em id="tPlBet">Х 1</em></div>' +
+      '<img class="twand" src="img/extra/wand.webp" alt="">' +
+      '<span class="tshd" id="tShd"></span><button class="trac" data-act="xch"><img src="img/extra/raccoon.webp" alt=""><span class="plank">ОБМЕНЯТЬ</span></button></div>' +
+      '<img class="tdeco tpup" src="img/guide/raven.webp" alt="">';
+  }
+  function updateDeco() {
+    var c = $('#tPlCoins'); if (!c) return;
+    var d = E.derived(state, now()); c.textContent = grp(state.coins - coinOffset); $('#tShd').textContent = '🛡×' + ((state.raid && state.raid.shields) || 0); $('#tPlBet').textContent = 'Х ' + state.bet;
+    $('#tEnTxt').textContent = state.energy + '/' + d.maxEnergy;
+    $('#tEnFill').style.width = Math.min(100, state.energy / d.maxEnergy * 100).toFixed(1) + '%';
+    var left = state.energyT + d.regenMs - Math.max(now(), state.time.high);
+    $('#tEnNext').textContent = state.energy >= d.maxEnergy ? 'Энергия полная' : '+1 энергия через ' + fmtTime(left);
+  }
+    /* ---------- шкала предметов события (единственное место, где видны предметы) ---------- */
   function evBarHTML(ce) {
     var it = ce.ev.item;
     return '<div class="evbar" id="evbar"><div class="ico" id="evIco"><img src="' + it.img + '" alt=""></div><div class="grow"><div class="small" style="font-weight:800;margin:0 0 3px 2px" id="evTitle"></div><div class="trk"><i id="evFill"></i><span id="evTxt"></span></div></div><div class="erw" id="evRw"></div></div>';
@@ -321,10 +344,19 @@
   function mountSlot() {
     strips = [0, 1, 2].map(function (i) { return $('#strip' + i); });
     layoutReels(); updateSlotUI();
+    if (slotDeco()) requestAnimationFrame(function () { layoutReels(); });
   }
   function layoutReels() {
     var r0 = $('#reel0'); if (!r0) return;
     cellH = Math.round(r0.clientWidth * 0.92);
+    if (slotDeco()) {
+      var spin = $('#spinBtn'), screen = $('#screen');
+      if (spin && screen) {
+        var need = spin.offsetHeight + 90;
+        var room = screen.clientHeight - (r0.getBoundingClientRect().top - screen.getBoundingClientRect().top) - need;
+        if (room > 0) cellH = Math.min(cellH, Math.max(52, Math.floor(room / 3)));
+      }
+    }
     $('#reels').style.setProperty('--cell', cellH + 'px');
     [0, 1, 2].forEach(function (i) {
       $('#reel' + i).style.height = (cellH * 3) + 'px';
@@ -945,7 +977,8 @@
         if (p.xp) return '+' + p.xp[n] + ' оп.';
         if (p.mana) return '+' + p.mana[n] + ' маны';
         if (p.keys) return p.keys[n] ? '+' + p.keys[n] + ' кл.' : '—';
-        if (p.attack) return p.attack[n] ? '⚔'.repeat(p.attack[n]) + (p.attack[n] > 1 ? ' 2 атаки' : ' атака') : '—';
+        if (p.attack) return p.attack[n] ? '⚔ атака' : '—';
+        if (p.raid) return p.raid[n] ? 'набег' : '—';
         if (p.cards) return n === 1 ? String(D.CARD_CHANCE_ONE_SYMBOL * 100).replace('.', ',') + '% карта' : n === 2 ? '50%: 1 карта' : '1–' + p.cards[n] + ' карты';
         if (p.chest) return p.chest[n] < 0 ? '—' : D.CHESTS[p.chest[n]].name.split(' ')[0];
         return '—';
@@ -981,7 +1014,7 @@
     { sel: '#evbar', t: 'Шкала события', x: 'Во время праздников с барабанов падают особые предметы. Они наполняют шкалу над Колесом, а за каждый этап — подарок. Каждый праздник — свой предмет.' },
     { sel: '#dbar', t: 'Дневной сбор', x: 'А это — сбор дня. Каждый день духи долины прячут в барабанах свой предмет — банки светлячков, жёлуди, перья, фонарики… Какой сегодня — видно на значке слева. Собирай — на 100 штук дадут 100 энергии, на 1 000 — тысячу, и так до 50 000! В полночь всё начинается заново, с новым предметом.' },
     { sel: '[data-act="miniMenu"]', t: 'Мини-игры', x: 'Когда надоест крутить — сюда. «Поиск» (5 попыток в день, энергия и шанс на ультраредкую карту), и «Магический сапёр» 9×9. Монетки-мини за «Поиск» тратятся в мини-лавке.' },
-    { sel: '#reels', t: 'Меч', x: '<img src="img/sym/9.webp" style="width:44px;float:left;margin:0 8px 4px 0;border-radius:10px">Новый символ на барабанах — меч. Два меча на линии — атака на соседа, три меча — сразу две! Как выпадут, я покажу всех четырёх соседей: уровень замка, казна, есть ли щит. Выбирай, к кому в гости.' },
+    { sel: '#reels', t: 'Меч', x: '<img src="img/sym/9.webp" style="width:44px;float:left;margin:0 8px 4px 0;border-radius:10px">Новый символ на барабанах — меч. Три меча на линии — атака на соседа. Как выпадут, я покажу всех четырёх соседей: уровень замка, казна, есть ли щит. Выбирай, к кому в гости.' },
     { sel: '[data-act="raids"]', t: 'Набеги', x: 'Дальше — деревня соседа: коснись постройки, и меч ударит по ней. Удар уносит десятую часть его казны, разрушение — больше и ещё 2 печати. Поднятый щит 🛡 примет первый удар на себя. Соседи бьют в ответ, но твои щиты (каждые 30 вращений) держат удар, журнал помнит обидчиков, а «Отомстить» проходит сквозь любой щит и даёт ×1,5.' },
     { sel: '#tLvl', t: 'Уровень', x: 'Кольцо вокруг цифры — опыт до следующего уровня. Новый уровень открывает ставки, постройки и коллекции. Нажми — увидишь свою летопись.' },
     { sel: '#nav [data-to="castle"]', t: 'Замок', x: 'А теперь — самое красивое. Здесь твой замок. Пойдём посмотрим!' },

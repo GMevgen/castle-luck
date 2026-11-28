@@ -6,9 +6,13 @@
 
   D.TITLE = 'Замок удачи';
   D.SAVE_VERSION = 5;   // 0.7: стиль оформления и «Что нового»
-  D.APP_VERSION = '0.9 (бета)';
+  D.APP_VERSION = '0.9.1 (бета)';
   /* 0.7: история версий — панель «Что нового» показывает записи новее последней увиденной, полная история — в Настройках */
   D.CHANGELOG = [
+    { v: '0.9.1 (бета)', title: 'Стиль «Монеточка», копилка и точная атака', items: [
+      'Новый стиль «Монеточка»: яркий мультяшный городок, автомат под соломенной крышей с мёдом, табличка игрока с монетами и куполами, большая красная «СПИН» и доска ставки. Кнопка «СПИН» целиком видна на экране 360×740, без прокрутки. Стили «Аниме», «Киберпанк» и «Карандаш» выглядят как в 0.9.',
+      'Атака на соседа теперь только с трёх мечей на линии: два меча больше её не дают — во всех стилях.',
+      'На барабанах — копилка (своя картинка в каждом стиле) вместо свитка. Три копилки начинают набег: имя и портрет соседа, 4 ямы, 3 лопаты, золото растёт с уровнем, одна яма мелкая или пустая, анимация раскопки и экран итога.'] },
     { v: '0.9 (бета)', title: 'Свой герой, вдвое больше опыта, три стиля', items: [
       'Создание персонажа: выберите пол и введите имя — оно звучит в сюжете; сменить можно в Настройках.',
       'Опыт за все действия — вдвое больше.',
@@ -60,7 +64,7 @@
     { id: 'bag',     name: 'Мешок золота',    img: 'img/sym/1.webp' },
     { id: 'crown',   name: 'Корона',          img: 'img/sym/2.webp' },
     { id: 'crystal', name: 'Кристалл энергии',img: 'img/sym/3.webp' },
-    { id: 'scroll',  name: 'Свиток знаний',   img: 'img/sym/4.webp' },
+    { id: 'pig',     name: 'Копилка',         img: 'img/sym/4.webp' },   // 0.9.1: вместо свитка — копилка, 3 копилки = набег
     { id: 'orb',     name: 'Сфера маны',      img: 'img/sym/5.webp' },
     { id: 'cards',   name: 'Карты',           img: 'img/sym/6.webp' },
     { id: 'chest',   name: 'Сундук',          img: 'img/sym/7.webp' },
@@ -68,13 +72,13 @@
     { id: 'sword',   name: 'Меч',             img: 'img/sym/9.webp' }   // 0.6.1: атаки на соседей
   ];
   /* Лента барабана: 36 позиций, одинаковая для всех трёх барабанов (барабаны независимы).
-     Состав: монета 8, мешок 4, корона 1, кристалл 3, свиток 4, сфера 3, карты 4, сундук 2, ключ 3, меч 4 = 36.
-     0.6.1: меч — 2 меча на линии = атака на соседа, 3 меча = две атаки (≈1 атака на 26 вращений, как в «Монеточке»). */
-  D.STRIP_COUNTS = { coin: 8, bag: 4, crown: 1, crystal: 3, scroll: 4, orb: 3, cards: 4, chest: 2, key: 3, sword: 4 };
+     Состав: монета 8, мешок 4, корона 1, кристалл 3, копилка 4, сфера 3, карты 4, сундук 2, ключ 3, меч 4 = 36.
+     0.9.1: атака только с трёх мечей; три копилки — набег-раскопки. */
+  D.STRIP_COUNTS = { coin: 8, bag: 4, crown: 1, crystal: 3, pig: 4, orb: 3, cards: 4, chest: 2, key: 3, sword: 4 };
   D.STRIP = (function () {
     // перемешанный вручную порядок, чтобы одинаковые символы не стояли подряд
-    var order = 'coin bag scroll coin cards sword crystal coin key orb coin bag chest sword scroll coin cards key ' +
-                'crown coin orb sword bag scroll crystal coin cards key coin orb sword bag scroll chest cards crystal';
+    var order = 'coin bag pig coin cards sword crystal coin key orb coin bag chest sword pig coin cards key ' +
+                'crown coin orb sword bag pig crystal coin cards key coin orb sword bag pig chest cards crystal';
     return order.split(' ').map(function (id) {
       for (var i = 0; i < D.SYMBOLS.length; i++) if (D.SYMBOLS[i].id === id) return i;
       throw new Error(id);
@@ -88,12 +92,12 @@
     bag:     { coins: [0, 0.351, 2.02, 21.96] },
     crown:   { coins: [0, 0.714, 5.93, 32.94] },           // 3 короны — ДЖЕКПОТ (гарантирован на 50–80-м вращении)
     crystal: { energy: [0, 0, 2, 10] },
-    scroll:  { xp: [0, 2, 15, 60] },
+    pig:     { raid: [0, 0, 0, 1] },          // 0.9.1: 3 копилки — набег (золото из раскопок)
     orb:     { mana: [0, 1, 5, 25] },
     cards:   { cards: [0, 0, 1, 3] },               // 1 символ: 15% шанс карты
     chest:   { chest: [-1, -1, 0, 2] },             // 2 = деревянный, 3 = золотой
     key:     { keys: [0, 0, 1, 3] },
-    sword:   { attack: [0, 0, 1, 2] }                // 0.6.1: 2 меча — атака, 3 меча — две атаки
+    sword:   { attack: [0, 0, 0, 1] }                // 0.9.1: атака только с трёх мечей
   };
   D.BASE_XP_PER_BET = 3;
   /* v2: весь опыт из всех источников ×0,5 (применяется в одном месте — E.addXp) */
@@ -290,7 +294,7 @@
     { id: 'spring',  name: 'Праздник фей',         col: 'spring',  banner: 'img/ev/spring.webp',  sym: 'cards',   bonus: { cardChance: 0.5 }, bonusText: 'Карты выпадают на 50% чаще',
       item: { name: 'Светлячки в банке', img: 'img/ev/item2.webp' },
       text: 'Феи вернулись в сады замка. Символы карт на барабанах приносят светлячков.' },
-    { id: 'summer',  name: 'Летний турнир',        col: 'summer',  banner: 'img/ev/summer.webp',  sym: 'scroll',  bonus: { xp: 0.5 },     bonusText: '+50% опыта',
+    { id: 'summer',  name: 'Летний турнир',        col: 'summer',  banner: 'img/ev/summer.webp',  sym: 'pig',  bonus: { xp: 0.5 },     bonusText: '+50% опыта',
       item: { name: 'Турнирные флажки', img: 'img/ev/item3.webp' },
       text: 'Рыцари съехались на турнир! Свитки знаний на барабанах приносят турнирные флажки.' }
   ];

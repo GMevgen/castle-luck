@@ -53,7 +53,7 @@
     if (r.swordLocked) U.toast('⚔ Мечи! Атаки на соседей откроются на ' + D.RAID.unlock + ' уровне.', 'img/sym/9.webp');
     if (r.swordCoins) U.toast('⚔ Атак уже ' + D.RAID.maxCharges + ' — лишние мечи переплавлены в +' + U.fmt(r.swordCoins) + ' монет', 'img/sym/9.webp');
     if (r.swordAttack && onSlot) {   // как в «Монеточке»: мечи сразу ведут к выбору цели
-      U.setAuto(false); U.S.win(); U.toast(r.swordAttack > 1 ? '⚔⚔ Три меча — две атаки!' : '⚔ Два меча — атака!', 'img/sym/9.webp');
+      U.setAuto(false); U.S.win(); U.toast('⚔ Три меча — атака!', 'img/sym/9.webp');
       setTimeout(function () { if (!document.querySelector('.mg') && !U.modalCount()) chooseScreen(); }, 900);
     }
     if (r.raidShield) U.toast('🛡 Новый щит — теперь набег соседа отскочит.', 'img/sym/7.webp');
@@ -71,7 +71,7 @@
     var s = st(), r = s.raid;
     if (!X.raidOpen(s)) return '<p class="muted">Набеги откроются на ' + D.RAID.unlock + ' уровне. Соседи пока присматриваются к вашему замку.</p>';
     var h = '<div class="rvhud"><span class="pill">⚔ ' + r.charges + '/' + D.RAID.maxCharges + '</span><span class="pill">🛡 ' + r.shields + '/' + D.RAID.maxShields + '</span>' +
-      '<span class="small muted"><img src="img/sym/9.webp" style="width:16px;vertical-align:-3px;border-radius:4px"> 2 меча на барабанах — атака, 3 — две; щит — каждые ' + D.RAID.shieldEvery + ' вращений</span></div>'; if (r.charges) h += '<button class="btn green" style="width:100%;margin:6px 0" data-act="rChoose">⚔ Атаковать соседа (' + r.charges + ')</button>';
+      '<span class="small muted"><img src="img/sym/9.webp" style="width:16px;vertical-align:-3px;border-radius:4px"> 3 меча на барабанах — атака; щит — каждые ' + D.RAID.shieldEvery + ' вращений</span></div>'; if (r.charges) h += '<button class="btn green" style="width:100%;margin:6px 0" data-act="rChoose">⚔ Атаковать соседа (' + r.charges + ')</button>';
     var dmg = Object.keys(r.dmg);
     if (dmg.length) h += '<div class="card warn"><b>Повреждено набегами:</b>' + dmg.map(function (id) { return '<div class="row" style="margin-top:6px"><img src="' + D.BLD_BY_ID[id].img + '" style="width:40px;height:40px;object-fit:contain"><span class="grow">' + D.BLD_BY_ID[id].name + '</span><button class="btn green sm" data-act="xRepair" data-id="' + id + '">Починить · ' + U.fmtK(X.repairCost(s)) + '</button></div>'; }).join('') + '</div>';
     h += '<div class="tabs"><button data-act="rTab" data-t="rivals" class="' + (rtab === 'rivals' ? 'on' : '') + '">Соседи</button><button data-act="rTab" data-t="log" class="' + (rtab === 'log' ? 'on' : '') + '">Журнал</button></div>';
@@ -109,7 +109,7 @@
   var SPOTS = [[27, 34], [73, 34], [27, 72], [73, 72]];
   function villageScreen(id, rev) {
     var s = st(), rv = D.RIVAL_BY_ID[id], c = D.CHARS[rv.who], R = X.rival(s, id, U.now()), busy = false;
-    if (rev == null && s.raid.charges <= 0) { U.toast('Нет атак — выбейте два меча на барабанах', 'img/sym/9.webp'); return; }
+    if (rev == null && s.raid.charges <= 0) { U.toast('Нет атак — выбейте три меча на барабанах', 'img/sym/9.webp'); return; }
     var el = overlay('mg-atk', '');
     function draw() {
       var shield = R.shield && rev == null;

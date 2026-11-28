@@ -1,5 +1,5 @@
 /* Замок удачи 0.8–0.9 — правила вращения, общие для всех стилей: гость-обменщик карт раз в сутки, энергия 50,
-   ставки ×1…×10, три свитка — набег-раскопки (3 из 4 ям), три сферы — +1 купол (макс. 3).
+   ставки ×1…×10, три копилки — набег-раскопки (3 из 4 ям), три сферы — +1 купол (макс. 3). Атака — только три меча.
    0.9: стиль «Мультяшный» удалён, правила стали общими; деревни уровней и питомец-енот убраны (замок — снова главный экран). */
 (function (root) {
   var CL = root.CL, D = CL.Data, E = CL.Engine, X = CL.Extra; if (!X) return;
@@ -34,28 +34,31 @@
   var _bo = E.betOptions;
   E.betOptions = function (s) { return on(s) ? D.SLOT8.bets.slice() : _bo(s); };
 
-  /* ---------- вращение: свинки → раскопки, значки → купол ---------- */
+  /* ---------- вращение: копилки → раскопки, сферы → купол ---------- */
   var _spin = E.spin;
   E.spin = function (s, now, rng) {
     if (on(s) && D.SLOT8.bets.indexOf(s.bet) < 0) s.bet = 10;
     var out = _spin(s, now, rng); if (!out.ok || !on(s)) return out;
     var tr = out.line.triple;
     if (tr === 'orb' && s.raid.shields < D.SLOT8.maxShields) { s.raid.shields++; out.shieldWin = 1; }
-    if (tr === 'scroll' && !s.dig) { s.dig = T.makeDig(s, rng, out.bet); out.raidDig = true; }
+    if (tr === 'pig' && !s.dig) { s.dig = T.makeDig(s, rng, out.bet); out.raidDig = true; }
     return out;
   };
   T.makeDig = function (s, rng, bet) {
-    var sp = D.SLOT8.dig.spots.slice(); for (var i = sp.length - 1; i > 0; i--) { var j = rng.int(i + 1), x = sp[i]; sp[i] = sp[j]; sp[j] = x; }
+    // 0.9.1: четыре ямы, золото в базовых монетах B (растёт с уровнем); одна яма пустая или совсем маленькая
+    var small = rng.chance(0.55) ? 0 : 3;
+    var sp = [30, 15, 8, small]; for (var i = sp.length - 1; i > 0; i--) { var j = rng.int(i + 1), x = sp[i]; sp[i] = sp[j]; sp[j] = x; }
     var rv = D.RIVALS[rng.int(D.RIVALS.length)].id;
-    return { rival: rv, spots: sp.map(function (v) { return v * bet; }), open: [false, false, false, false], left: D.SLOT8.dig.tries, got: 0 };
+    return { rival: rv, spots: sp.map(function (v) { return v * bet; }), open: [false, false, false, false], left: D.SLOT8.dig.tries, got: 0, done: false, lvl: s.level };
   };
   T.dig = function (s, i, rng, now) {
-    var g = s.dig; if (!g || g.left <= 0 || g.open[i] || i < 0 || i > 3) return { ok: false };
+    var g = s.dig; if (!g || g.done || g.left <= 0 || g.open[i] || i < 0 || i > 3) return { ok: false };
     g.open[i] = true; g.left--;
     var units = g.spots[i], coins = 0;
     if (units > 0) coins = X.reward(s, { coinsB: units }, rng, now).coins || 0;
     g.got += coins; var done = g.left <= 0;
-    if (done) { s.stats.raids = (s.stats.raids || 0) + 1; s.dig = null; }
-    return { ok: true, coins: coins, done: done, total: g.got };
+    if (done) { g.done = true; s.stats.raids = (s.stats.raids || 0) + 1; }
+    return { ok: true, coins: coins, empty: coins <= 0, done: done, total: g.got };
   };
+  T.claimDig = function (s) { if (!s.dig || !s.dig.done) return { ok: false }; var t = s.dig.got; s.dig = null; return { ok: true, total: t }; };
 })(typeof window !== 'undefined' ? window : globalThis);

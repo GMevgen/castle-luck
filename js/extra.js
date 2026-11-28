@@ -25,7 +25,7 @@
     { id: 'key', name: 'Ключ', ico: 'key', keys: 1, price: 900, day: 2 }   // 0.6.1: было 90 (×10)
   ];
   D.SWEEP = { n: 9, mines: 10, bonus: 14 };
-  /* 0.6.1: заряды атак дают только мечи на барабанах (2 меча — 1 атака, 3 — 2); раньше — 1 заряд каждые 12 вращений */
+  /* 0.9.1: заряд атаки — только три меча на линии (раньше 2 меча давали атаку, 3 — две) */
   D.RAID = { unlock: 4, maxCharges: 3, maxShields: 3, shieldEvery: 30, npcMin: 5 * H, npcSpread: 5 * H, npcMaxOffline: 2 };
   D.RIVALS = [
     { id: 'baron', who: 'baron', village: 'Шнапсбург', blds: ['citadel', 'treasury', 'market', 'warehouse'],
@@ -125,7 +125,7 @@
     if (revengeId != null) {
       rev = s.raid.log.filter(function (e) { return e.id === revengeId; })[0];
       if (!rev || rev.dir !== 'in' || rev.revenged || rev.rival !== rivalId) return { ok: false, reason: 'Месть уже свершилась' };
-    } else if (s.raid.charges <= 0) return { ok: false, reason: 'Нет атак — выбейте два меча на барабанах' };
+    } else if (s.raid.charges <= 0) return { ok: false, reason: 'Нет атак — выбейте три меча на барабанах' };
     var R = X.rival(s, rivalId, now), bi = ((bldIdx | 0) % 4 + 4) % 4;
     if (R.hp[bi] <= 0) return { ok: false, reason: 'Эта постройка уже разрушена — выберите другую' };
     if (rev) rev.revenged = true; else s.raid.charges--;

@@ -31,7 +31,7 @@
     return c;
   }
   /* 0.7: эффекты по теме — в «Киберпанке» (fx.ambient = 'neon') вместо фонариков дроны, вместо облаков смог, вместо фей голо-искры, вместо птиц — стаи микродронов */
-  function AMB() { try { return (CL.Theme && CL.Theme.fx('ambient')) || ''; } catch (e) { return ''; } }
+  function AMB() { try { var a = (CL.Theme && CL.Theme.fx('ambient')) || ''; return (a === 'toon' || a === 'monet') ? 'monet' : a; } catch (e) { return ''; } }
   function NEON() { return AMB() === 'neon'; }
   /* фаза B: «gloom» (тёмное фэнтези) — блуждающие огоньки, туман, летучие мыши; «ash» (карандаш) — дым и пепел, вороны;
      «paper» (цветные карандаши) — воздушные шарики, бабочки */

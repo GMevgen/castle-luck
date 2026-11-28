@@ -44,21 +44,42 @@
     if (r.shieldWin) fx('shd', 'img/sym/5.webp', '+1 КУПОЛ');
     if (r.raidDig) { U.setAuto(false); fx('raid', 'img/sym/4.webp', 'НАБЕГ!'); setTimeout(C.openDig, 1200); }
   };
+  function rivalInfo(g) {
+    var r0 = D.RIVAL_BY_ID[g.rival] || {}, ch = D.CHARS[r0.who] || {};
+    return { name: ch.name || 'сосед', village: r0.village || '', img: ch.img || 'img/port/0.webp' };
+  }
+  function resultHTML(g, rv) {
+    return '<div class="tdres"><div class="tdhero"><img src="' + rv.img + '" alt=""><div><b>' + rv.name + '</b><div class="small">' + rv.village + '</div></div></div>' +
+      '<p>Набег окончен</p><div class="got">+' + U.fmt(g.got) + '</div><p class="small">золото уже у вас</p><button class="btn" data-x="ok">Забрать</button></div>';
+  }
   C.openDig = function () {
     var g = st().dig; if (!g || $('.tdig')) return;
-    var r0 = D.RIVAL_BY_ID[g.rival] || {}, rv = { name: ((D.CHARS[r0.who] || {}).name || 'сосед') + (r0.village ? ', ' + r0.village : '') }, el = document.createElement('div'); el.className = 'tdig';
-    el.innerHTML = '<div class="tdbox"><h2>Набег!</h2><p>Копаем у: <b>' + rv.name + '</b></p><p class="tdl">Лопат: <b id="tdLeft">' + g.left + '</b> из 3</p><div class="tdholes">' +
-      [0, 1, 2, 3].map(function (i) { return '<button class="hole' + (g.open[i] ? ' open' : '') + '" data-i="' + i + '"><span>⛏</span></button>'; }).join('') +
-      '</div><div class="tdsum" id="tdSum"></div></div>';
+    var rv = rivalInfo(g), el = document.createElement('div'); el.className = 'tdig';
+    function holes() {
+      return [0, 1, 2, 3].map(function (i) {
+        return '<button class="hole' + (g.open[i] ? ' open' : '') + '" data-i="' + i + '">' +
+          (g.open[i] ? (g.spots[i] ? '<img src="' + U.IC.coin + '" alt="">' : '<b>пусто</b>') : '<span>⛏</span>') + '</button>';
+      }).join('');
+    }
+    el.innerHTML = '<div class="tdbox" id="tdBox"><div class="tdhero"><img src="' + rv.img + '" alt=""><div><b>' + rv.name + '</b><div class="small">' + (rv.village ? 'деревня ' + rv.village : '') + '</div></div></div>' +
+      '<h2>Набег!</h2><p class="tdl">Лопат: <b id="tdLeft">' + g.left + '</b> из 3</p><div class="tdholes">' + holes() +
+      '</div><div class="tdsum" id="tdSum">Добыто: <b>0</b></div></div>';
     $('#app').appendChild(el);
+    if (g.done) { $('#tdBox', el).innerHTML = resultHTML(g, rv); }
     el.addEventListener('click', function (e) {
-      if (e.target.closest('[data-x="ok"]')) { el.remove(); U.refreshAll(); return; }
-      var b = e.target.closest('.hole'); if (!b || b.classList.contains('open')) return;
+      if (e.target.closest('[data-x="ok"]')) { T.claimDig(st()); el.remove(); U.refreshAll(); return; }
+      var b = e.target.closest('.hole'); if (!b || b.classList.contains('open') || b.classList.contains('digging')) return;
       var r = T.dig(st(), +b.dataset.i, U.rng, U.now()); if (!r.ok) return;
-      b.classList.add('open'); b.innerHTML = r.coins ? '<img src="' + U.IC.coin + '" alt=""><b>+' + U.fmtK(r.coins) + '</b>' : '<b>пусто</b>';
-      if (r.coins && U.S.coin) U.S.coin(); U.updateTop(); U.save();
-      $('#tdLeft', el).textContent = Math.max(0, 3 - el.querySelectorAll('.hole.open').length);
-      if (r.done) $('#tdSum', el).innerHTML = '<p>Добыто: <b>' + U.fmt(r.total) + '</b></p><button class="btn" data-x="ok">Забрать</button>';
+      b.classList.add('digging');
+      setTimeout(function () {
+        b.classList.remove('digging'); b.classList.add('open');
+        b.innerHTML = r.coins ? '<img src="' + U.IC.coin + '" alt=""><b>+' + U.fmtK(r.coins) + '</b><i class="flyc">💰</i>' : '<b>пусто</b>';
+        if (r.coins && U.S.coin) U.S.coin();
+        $('#tdLeft', el).textContent = String(st().dig ? st().dig.left : 0);
+        $('#tdSum', el).innerHTML = 'Добыто: <b>' + U.fmt(r.total) + '</b>';
+        U.updateTop(); U.save();
+        if (r.done) setTimeout(function () { var box = $('#tdBox', el); if (box) box.innerHTML = resultHTML(st().dig || { got: r.total }, rv); }, 700);
+      }, 450);
     });
   };
 })();

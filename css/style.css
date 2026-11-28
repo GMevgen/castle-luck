@@ -520,6 +520,7 @@ textarea,input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 .tpick:not(.off):active{transform:translateY(2px)}
 .tp-soon{display:grid;place-items:center;font-weight:900;font-size:13px;color:#fff;text-transform:uppercase;letter-spacing:1px}
 .tp-soon span{padding:3px 10px;border-radius:10px;background:rgba(0,0,0,.35)}
+.tp-monet{background:radial-gradient(circle at 30% 70%,#7ad957 0 30%,transparent 31%),radial-gradient(circle at 75% 80%,#5cc144 0 28%,transparent 29%),linear-gradient(#7fd0ff 0 55%,#66c94a 55%)}
 .tp-pencil{background:repeating-linear-gradient(115deg,#2a241c 0 6px,#3a3228 6px 7px),radial-gradient(circle at 70% 30%,rgba(230,150,60,.35),transparent 40%),#221d16}
 .whatsnew{text-align:left}
 .whatsnew h2{text-align:center}
@@ -563,3 +564,14 @@ textarea,input{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 .hole.open{background:radial-gradient(ellipse at 50% 60%,#3a200a 0 45%,#8f5a2a 46% 58%,#4a3a28 59%);animation:tpop .5s}
 .hole img{width:44px}.hole b{font:900 18px var(--hand,inherit);text-shadow:0 2px 0 rgba(0,0,0,.75),0 0 6px rgba(0,0,0,.6)}
 .gname{display:flex;align-items:center;gap:8px;margin:6px 0 10px;font-weight:800}.gname input{flex:1;min-width:0;padding:8px 10px;border-radius:10px;border:2px solid #d9b571;font:inherit;font-size:16px}
+
+/* набег-раскопки 0.9.1 */
+.tdig .tdhero{display:flex;align-items:center;gap:10px;justify-content:center;margin:0 0 8px}
+.tdig .tdhero img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #d9a441;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.tdig .tdhero div{text-align:left}
+.tdig .tdsum{min-height:28px;font:800 16px var(--hand);color:#ffe7a0}
+.hole.digging{animation:tdigw .25s linear 4}
+.hole .flyc{position:absolute;animation:tflyc .7s ease-out forwards;font-size:16px;pointer-events:none}
+@keyframes tflyc{0%{transform:translateY(0) scale(.6);opacity:1}100%{transform:translateY(-48px) scale(1.2);opacity:0}}
+.tdres{padding:8px 0}
+.tdres .got{font:800 32px var(--hand);color:#ffe7a0;text-shadow:0 2px 0 #000}

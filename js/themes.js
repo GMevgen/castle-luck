@@ -8,7 +8,8 @@
   var LIST = [
     { id: 'anime', name: 'Аниме', ready: true, desc: 'Тёплая акварель, замок, долина и ворон Карр. Стиль по умолчанию.' },
     { id: 'cyber', name: 'Киберпанк', ready: true, desc: 'Неон, стальные плиты, квартал небоскрёбов, кредиты и голограмма ворона.' },
-    { id: 'pencil', name: 'Карандаш', ready: true, desc: 'Чёрно-белая штриховка разорённого края с редкими пятнами цвета.' }
+    { id: 'pencil', name: 'Карандаш', ready: true, desc: 'Чёрно-белая штриховка разорённого края с редкими пятнами цвета.' },
+    { id: 'monet', name: 'Монеточка', ready: true, desc: 'Яркий мультяшный городок: соломенная крыша с мёдом, большие барабаны и красная кнопка «СПИН».' }
   ];
   var BY = {}; LIST.forEach(function (t) { BY[t.id] = t; });
   function ls(k, v) { try { if (v === undefined) return root.localStorage.getItem(k); if (v === null) root.localStorage.removeItem(k); else root.localStorage.setItem(k, v); } catch (e) { return null; } }
